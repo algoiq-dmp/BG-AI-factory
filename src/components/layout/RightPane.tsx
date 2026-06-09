@@ -3,6 +3,7 @@
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { useOsStore } from '@/store/useOsStore';
+import { useProjectStore } from '@/store/useProjectStore';
 import {
   Activity, Zap, ShieldCheck, Brain, GitBranch,
   FileText, Clock, ChevronDown, ChevronRight, User,
@@ -14,13 +15,14 @@ import {
 
 /* ─── Mock Data for AI CEO Dashboard ─────────────────────────── */
 
+// Base mock data for AI CEO Dashboard (will be overridden by real project data)
 const PROJECT_INFO = {
-  name: 'Launch IQ',
+  name: 'No Active Project',
   type: 'AI Generation Platform',
   healthScore: 91,
   deliveryConfidence: 94,
   lastReview: '2 mins ago',
-  status: 'RUNNING' as const,
+  status: 'IDLE' as const,
 };
 
 const EXECUTIVE_SUMMARY = `Project progressing normally. Frontend completion is ahead of schedule. Testing coverage requires improvement. No critical security issues detected. Estimated delivery: 3 days earlier than planned.`;
@@ -267,11 +269,24 @@ function StatRow({ label, value, color }: { label: string; value: React.ReactNod
 /* ─── Main Component ─────────────────────────────────────────── */
 
 export default function RightPane() {
-  const sts = STATUS_STYLES[PROJECT_INFO.status];
   const router = useRouter();
   const { mode: osMode } = useOsStore();
+  const { getActiveProject } = useProjectStore();
+  const activeProject = getActiveProject();
+  
   const [collapsed, setCollapsed] = useState(false);
   const [thinkingMode, setThinkingMode] = useState('DeepSeek Pro');
+
+  // Dynamically override project info based on actual project selection
+  const currentProjectInfo = {
+    ...PROJECT_INFO,
+    name: activeProject?.name || PROJECT_INFO.name,
+    type: activeProject?.domainTemplate ? `${activeProject.domainTemplate} Project` : PROJECT_INFO.type,
+    status: (activeProject?.status?.toUpperCase() || PROJECT_INFO.status) as any,
+    healthScore: activeProject?.progress ? Math.max(50, activeProject.progress) : PROJECT_INFO.healthScore,
+  };
+
+  const sts = STATUS_STYLES[currentProjectInfo.status] || STATUS_STYLES['IDLE'];
 
   /* ── Collapsed view ──────────────────────────────────────── */
   if (collapsed) {
@@ -296,11 +311,11 @@ export default function RightPane() {
         </div>
 
         <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 10, flex: 1, paddingTop: 4 }}>
-          <div title={`Health: ${PROJECT_INFO.healthScore}%`} style={{
+          <div title={`Health: ${currentProjectInfo.healthScore}%`} style={{
             width: 28, height: 28, borderRadius: 8, display: 'flex', alignItems: 'center', justifyContent: 'center',
             backgroundColor: 'rgba(16,185,129,0.1)', border: '1px solid rgba(16,185,129,0.2)',
           }}>
-            <span style={{ fontSize: 9, fontWeight: 800, fontFamily: 'monospace', color: '#10b981' }}>{PROJECT_INFO.healthScore}</span>
+            <span style={{ fontSize: 9, fontWeight: 800, fontFamily: 'monospace', color: '#10b981' }}>{currentProjectInfo.healthScore}</span>
           </div>
           <div title="Critical Risks: 0" style={{
             width: 28, height: 28, borderRadius: 8, display: 'flex', alignItems: 'center', justifyContent: 'center',
@@ -356,17 +371,17 @@ export default function RightPane() {
           </button>
         </div>
 
-        <div style={{ fontSize: 14, fontWeight: 700, color: '#fff', marginBottom: 2 }}>{PROJECT_INFO.name}</div>
-        <div style={{ fontSize: 11, color: '#8b9bb4', marginBottom: 12 }}>{PROJECT_INFO.type}</div>
+        <div style={{ fontSize: 14, fontWeight: 700, color: '#fff', marginBottom: 2 }}>{currentProjectInfo.name}</div>
+        <div style={{ fontSize: 11, color: '#8b9bb4', marginBottom: 12 }}>{currentProjectInfo.type}</div>
 
         <div style={{ display: 'flex', gap: 10 }}>
           <div style={{ flex: 1, padding: 8, borderRadius: 8, background: 'rgba(16,185,129,0.1)', border: '1px solid rgba(16,185,129,0.2)' }}>
             <div style={{ fontSize: 10, color: '#10b981', fontWeight: 700, textTransform: 'uppercase', marginBottom: 2 }}>Health</div>
-            <div style={{ fontSize: 18, fontWeight: 800, color: '#fff' }}>{PROJECT_INFO.healthScore}%</div>
+            <div style={{ fontSize: 18, fontWeight: 800, color: '#fff' }}>{currentProjectInfo.healthScore}%</div>
           </div>
           <div style={{ flex: 1, padding: 8, borderRadius: 8, background: 'rgba(59,130,246,0.1)', border: '1px solid rgba(59,130,246,0.2)' }}>
             <div style={{ fontSize: 10, color: '#3b82f6', fontWeight: 700, textTransform: 'uppercase', marginBottom: 2 }}>Confidence</div>
-            <div style={{ fontSize: 18, fontWeight: 800, color: '#fff' }}>{PROJECT_INFO.deliveryConfidence}%</div>
+            <div style={{ fontSize: 18, fontWeight: 800, color: '#fff' }}>{currentProjectInfo.deliveryConfidence}%</div>
           </div>
           <div style={{ flex: 1, padding: 8, borderRadius: 8, background: 'rgba(245,158,11,0.1)', border: '1px solid rgba(245,158,11,0.2)' }}>
             <div style={{ fontSize: 10, color: '#f59e0b', fontWeight: 700, textTransform: 'uppercase', marginBottom: 2 }}>Risk Level</div>
@@ -374,7 +389,7 @@ export default function RightPane() {
           </div>
         </div>
         <div style={{ fontSize: 9, color: '#586c8f', marginTop: 10, textAlign: 'right' }}>
-          Last AI Review: {PROJECT_INFO.lastReview}
+          Last AI Review: {currentProjectInfo.lastReview}
         </div>
       </div>
 
@@ -421,7 +436,7 @@ export default function RightPane() {
         <div style={{ padding: 12, borderRadius: 8, background: 'linear-gradient(135deg, rgba(255,255,255,0.05), rgba(255,255,255,0.01))', border: '1px solid #2a3441' }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginBottom: 6 }}>
             <Sparkles size={12} color="#a855f7" />
-            <span style={{ fontSize: 10, fontWeight: 700, textTransform: 'uppercase', color: '#a855f7' }}>Executive Summary</span>
+            <span style={{ fontSize: 10, fontWeight: 700, textTransform: 'uppercase', color: '#a855f7' }}>AI Executive Summary (Simulation)</span>
           </div>
           <p style={{ fontSize: 11, color: '#c9d1d9', lineHeight: 1.5, margin: 0 }}>
             {EXECUTIVE_SUMMARY}
@@ -429,9 +444,9 @@ export default function RightPane() {
         </div>
 
         {/* 1. PROJECT HEALTH & PREDICTION */}
-        <CollapsibleSection title="Project Health & Delivery" icon={<Activity size={12} />} accent="#10b981" defaultOpen={true}>
+        <CollapsibleSection title="Project Health (Simulated)" icon={<Activity size={12} />} accent="#10b981" defaultOpen={true}>
           <div style={{ display: 'flex', gap: 12, marginBottom: 12 }}>
-            <CircularProgress percent={PROJECT_INFO.healthScore} size={60} />
+            <CircularProgress percent={currentProjectInfo.healthScore} size={60} />
             <div style={{ flex: 1, display: 'flex', flexDirection: 'column', justifyContent: 'center' }}>
               <div style={{ fontSize: 11, color: '#8b9bb4', marginBottom: 2 }}>Overall Health Score</div>
               <div style={{ fontSize: 10, color: '#c9d1d9' }}>Weighted index based on 7 technical and team factors.</div>
@@ -450,7 +465,7 @@ export default function RightPane() {
           </div>
           <div style={{ background: '#0f172a', padding: 10, borderRadius: 8, border: '1px solid #1e293b' }}>
             <h4 style={{ fontSize: 10, textTransform: 'uppercase', color: '#94a3b8', margin: '0 0 8px 0' }}>AI Delivery Prediction</h4>
-            <MetricBar label="Current Progress" value={DELIVERY_PREDICTION.currentProgress} color="#3b82f6" />
+            <MetricBar label="Current Progress" value={activeProject?.progress || DELIVERY_PREDICTION.currentProgress} color="#3b82f6" />
             <StatRow label="Predicted Delivery" value={DELIVERY_PREDICTION.expectedCompletion} color="#f59e0b" />
             <StatRow label="On Time Probability" value={`${DELIVERY_PREDICTION.onTimeProb}%`} color="#10b981" />
             <StatRow label="Risk of Delay" value={`${DELIVERY_PREDICTION.delayProb}%`} color="#ef4444" />
@@ -460,8 +475,11 @@ export default function RightPane() {
         {/* STARTUP MODE: Hide the heavy enterprise panels below this point to keep it simple */}
         {osMode === 'ENTERPRISE' && (
           <>
+            <div style={{ fontSize: 9, textAlign: 'center', color: '#8b9bb4', marginTop: 4, marginBottom: -4 }}>
+              --- SIMULATED DATA BELOW ---
+            </div>
             {/* 2. AI RISK DETECTION CENTER */}
-            <CollapsibleSection title="Risk Detection Center" icon={<AlertTri size={12} />} accent="#ef4444" defaultOpen={true}>
+            <CollapsibleSection title="Risk Detection Center" icon={<AlertTri size={12} />} accent="#ef4444" defaultOpen={false}>
           <div style={{ display: 'flex', gap: 6, marginBottom: 10 }}>
             <div style={{ flex: 1, background: 'rgba(239,68,68,0.1)', padding: 6, borderRadius: 6, border: '1px solid rgba(239,68,68,0.2)', textAlign: 'center' }}>
               <div style={{ fontSize: 14, fontWeight: 800, color: '#ef4444' }}>{RISK_CENTER.critical}</div>
@@ -615,7 +633,7 @@ export default function RightPane() {
         </CollapsibleSection>
 
         {/* 7. STRATEGIC ADVICE & FUTURE */}
-        <CollapsibleSection title="Strategic Advice & Future" icon={<Eye size={12} />} accent="#eab308" defaultOpen={true}>
+        <CollapsibleSection title="Strategic Advice & Future" icon={<Eye size={12} />} accent="#eab308" defaultOpen={false}>
           <div style={{ padding: 10, background: '#1a1403', borderRadius: 6, border: '1px solid #713f12', marginBottom: 10 }}>
             <div style={{ fontSize: 11, fontWeight: 700, color: '#fde047', marginBottom: 6 }}>If I were running this project today:</div>
             <ol style={{ margin: 0, paddingLeft: 16, fontSize: 11, color: '#fef08a', display: 'flex', flexDirection: 'column', gap: 4 }}>

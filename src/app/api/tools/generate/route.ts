@@ -45,7 +45,20 @@ Execute the task based on the context and system prompt provided.
     }
 
     if (!apiKey) {
-      return NextResponse.json({ error: "API Key not configured." }, { status: 400 });
+      // Mock stream for testing without API keys (raw text format, matching toTextStreamResponse)
+      const encoder = new TextEncoder();
+      const stream = new ReadableStream({
+        async start(controller) {
+          const text = "Error bypassed: No API Key configured. This is a mock response from the system. To generate real AI outputs, please configure your DEEPSEEK_API_KEY in the environment or project settings.";
+          const words = text.split(" ");
+          for (const word of words) {
+            controller.enqueue(encoder.encode(word + " "));
+            await new Promise(r => setTimeout(r, 50));
+          }
+          controller.close();
+        }
+      });
+      return new Response(stream, { headers: { 'Content-Type': 'text/plain; charset=utf-8' } });
     }
 
     // SERVER-SIDE PROMPT SECURITY (Fixing Prompt Injection Vulnerability)
@@ -55,12 +68,12 @@ Focus solely on outputting the precise artifact or code required for the task.`;
 
     const deepseek = createOpenAI({
       apiKey: apiKey,
-      baseURL: 'https://api.deepseek.com'
+      baseURL: 'https://api.deepseek.com/v1'
     });
 
     // Execute true streaming using Vercel AI SDK
     const result = streamText({
-      model: deepseek((model as string) === 'deepseek-coder' ? 'deepseek-coder' : 'deepseek-chat'),
+      model: deepseek.chat((model as string) === 'deepseek-coder' ? 'deepseek-coder' : 'deepseek-chat'),
       system: secureSystemPrompt,
       prompt: userPrompt,
       temperature: 0.7,
