@@ -1,0 +1,16 @@
+services:
+  db:
+    image: postgres:15-alpine
+    container_name: bg-ai-factory-db
+    restart: always
+    environment:
+      POSTGRES_USER: bg_user
+      POSTGRES_PASSWORD: bg_password123
+      POSTGRES_DB: bg_ai_factory
+    ports:
+      - "5432:5432"
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+
+volumes:
+  pgdata:

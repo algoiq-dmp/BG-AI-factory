@@ -1,0 +1,188 @@
+generator client {
+  provider = "prisma-client-js"
+  engineType = "library"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// Enums (Simulated using String for SQLite compatibility if needed, but Prisma supports String for enums in SQLite now or we can just use Strings)
+
+model User {
+  id            String    @id @default(cuid())
+  email         String    @unique
+  name          String?
+  role          String    @default("CLIENT") // "ADMIN" or "CLIENT"
+  karmaTokens   Int       @default(100)      // API Economy tokens
+  emailVerified DateTime?
+  image         String?
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+  
+  accounts      Account[]
+  sessions      Session[]
+  projects      Project[]
+  activityLogs  ActivityLog[]
+}
+
+model Project {
+  id              String    @id @default(cuid())
+  name            String
+  description     String?
+  domainTemplate  String?
+  tier            String    @default("FREE") // "FREE", "PRO", "ENTERPRISE"
+  status          String    @default("PLANNING")
+  pipelineStatus  String    @default("IDLE") // "IDLE", "RUNNING", "PAUSED", "COMPLETED"
+  progress        Int       @default(0)      // Current step 0-27
+  
+  userId          String
+  user            User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  
+  documents       Document[]
+  codeFiles       CodeFile[]
+  tasks           Task[]
+  knowledgeNodes  KnowledgeNode[]
+  activityLogs    ActivityLog[]
+  mcqAssessments  MCQAssessment[]
+  codeReviews     CodeReview[]
+  
+  createdAt       DateTime  @default(now())
+  updatedAt       DateTime  @updatedAt
+}
+
+model CodeFile {
+  id          String   @id @default(cuid())
+  path        String   // e.g., "src/components/Button.tsx"
+  content     String
+  language    String   // e.g., "typescript"
+  status      String   @default("GENERATED") // "GENERATED", "REVIEWED", "FAILED", "CIRCUIT_TRIPPED"
+  retryCount  Int      @default(0)
+  
+  projectId   String
+  project     Project  @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+}
+
+model Task {
+  id          String   @id @default(cuid())
+  title       String
+  description String?
+  status      String   @default("TODO") // "TODO", "IN_PROGRESS", "REVIEW", "DONE"
+  priority    String   @default("MEDIUM") // "LOW", "MEDIUM", "HIGH", "URGENT"
+  tokens      Int      @default(0) // Tokens estimated or burned on this task
+  
+  projectId   String
+  project     Project  @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+}
+
+model KnowledgeNode {
+  id          String   @id @default(cuid())
+  type        String   // "PRD", "ARCHITECTURE", "DEPENDENCY", "CODE_SNIPPET"
+  content     String
+  metadata    String?  // JSON stringified metadata for vector embeddings
+  
+  projectId   String
+  project     Project  @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+}
+
+model Document {
+  id          String    @id @default(cuid())
+  title       String
+  content     String?   // JSON or Markdown content
+  type        String    // "PRD", "BRD", "HLD", "SOP", "UPLOAD" etc.
+  fileUrl     String?
+  
+  projectId   String
+  project     Project   @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+}
+
+model ActivityLog {
+  id          String   @id @default(cuid())
+  action      String   // e.g., "PROJECT_CREATED", "CODE_GENERATED", "USER_LOGGED_IN"
+  details     String?  // JSON stringified details
+  status      String   @default("success") // "success", "warning", "error"
+  
+  projectId   String?
+  project     Project? @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  
+  userId      String?
+  user        User?    @relation(fields: [userId], references: [id], onDelete: Cascade)
+  
+  createdAt   DateTime @default(now())
+}
+
+model MCQAssessment {
+  id          String   @id @default(cuid())
+  score       Int
+  total       Int
+  questions   String   // JSON stringified array of questions and answers
+  gaps        String?  // JSON stringified array of knowledge gaps
+  
+  projectId   String
+  project     Project  @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  
+  createdAt   DateTime @default(now())
+}
+
+model CodeReview {
+  id          String   @id @default(cuid())
+  file        String
+  title       String
+  description String
+  severity    String   // "critical", "high", "medium", "low"
+  status      String   @default("open") // "open", "fixed"
+  
+  projectId   String
+  project     Project  @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+}
+
+model Account {
+  id                 String  @id @default(cuid())
+  userId             String
+  type               String
+  provider           String
+  providerAccountId  String
+  refresh_token      String?
+  access_token       String?
+  expires_at         Int?
+  token_type         String?
+  scope              String?
+  id_token           String?
+  session_state      String?
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([provider, providerAccountId])
+}
+
+model Session {
+  id           String   @id @default(cuid())
+  sessionToken String   @unique
+  userId       String
+  expires      DateTime
+  user         User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+model VerificationToken {
+  identifier String
+  token      String   @unique
+  expires    DateTime
+
+  @@unique([identifier, token])
+}
