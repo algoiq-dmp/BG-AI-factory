@@ -56,9 +56,15 @@ echo "📦 Step 4: Installing dependencies..."
 npm ci --production=false
 echo "   ✅ Dependencies installed"
 
-# ── 5. Set up environment variables ──────────────────────────
+# ── 5. Setup Database (Docker) ──────────────────────────────
 echo ""
-echo "🔐 Step 5: Environment setup..."
+echo "🐳 Step 5: Starting PostgreSQL via Docker..."
+docker compose up -d
+echo "   ✅ Database container running"
+
+# ── 6. Set up environment variables ──────────────────────────
+echo ""
+echo "🔐 Step 6: Environment setup..."
 if [ ! -f ".env.local" ]; then
     echo "   ⚠️  No .env.local found! Creating template..."
     cat > .env.local << 'ENVFILE'
@@ -85,15 +91,16 @@ else
     echo "   ✅ .env.local exists"
 fi
 
-# ── 6. Build the application ─────────────────────────────────
+# ── 7. Build the application ─────────────────────────────────
 echo ""
-echo "🔨 Step 6: Building production bundle..."
+echo "🔨 Step 7: Generating Prisma & Building production bundle..."
+npx prisma generate
 npm run build
 echo "   ✅ Build complete"
 
-# ── 7. Start/Restart with PM2 ────────────────────────────────
+# ── 8. Start/Restart with PM2 ────────────────────────────────
 echo ""
-echo "🚀 Step 7: Starting application..."
+echo "🚀 Step 8: Starting application..."
 pm2 delete bg-ai-factory 2>/dev/null || true
 pm2 start npm --name "bg-ai-factory" -- start
 pm2 save
@@ -167,5 +174,5 @@ echo "   pm2 status                 — Check status"
 echo "   pm2 monit                  — Monitor dashboard"
 echo ""
 echo "🔄 To redeploy after code changes:"
-echo "   cd $APP_DIR && git pull && npm ci && npm run build && pm2 restart bg-ai-factory"
+echo "   cd $APP_DIR && git pull && docker compose up -d && npm ci && npx prisma generate && npm run build && pm2 restart bg-ai-factory"
 echo ""
