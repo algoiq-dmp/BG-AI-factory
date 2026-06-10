@@ -1,15 +1,44 @@
 'use client';
 
-import { useWorkAnalyticsStore } from '@/store/useWorkAnalyticsStore';
+import { useWorkAnalyticsStore, TeamMember } from '@/store/useWorkAnalyticsStore';
 import { 
   Users, Trophy, Target, Bug, CheckCircle2, Zap,
-  TrendingUp, Clock, ShieldCheck
+  TrendingUp, Clock, ShieldCheck, Plus, X, Trash2
 } from 'lucide-react';
 import { useOsStore } from '@/store/useOsStore';
+import { useState } from 'react';
 
 export default function TeamIntelligencePage() {
   const { mode } = useOsStore();
-  const { teamMembers } = useWorkAnalyticsStore();
+  const { teamMembers, addTeamMember, removeTeamMember } = useWorkAnalyticsStore();
+  const [showAddModal, setShowAddModal] = useState(false);
+  const [newMember, setNewMember] = useState<Partial<TeamMember>>({
+    name: '',
+    role: '',
+    status: 'online',
+    productivityScore: 80,
+    productivity: 80,
+    aiEfficiency: 75,
+    bugsCreated: 0,
+    bugsFixed: 0,
+    tasksCompleted: 0,
+    activeCodingHours: 0
+  });
+
+  const handleAddMember = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!newMember.name || !newMember.role) return;
+    
+    // Auto-generate avatar initials
+    const initials = newMember.name.split(' ').map(n => n[0]).join('').substring(0, 2).toUpperCase();
+    
+    addTeamMember({
+      ...(newMember as Omit<TeamMember, 'id' | 'avatar'>),
+      avatar: initials,
+    });
+    setShowAddModal(false);
+    setNewMember({ ...newMember, name: '', role: '' });
+  };
 
   if (mode === 'STARTUP') {
     return (
@@ -30,14 +59,23 @@ export default function TeamIntelligencePage() {
   return (
     <div className="h-full w-full overflow-y-auto bg-[#0b0e14] text-[#8b9bb4] animate-in fade-in slide-in-from-bottom-4 duration-500 custom-scrollbar">
       {/* Header */}
-      <div className="sticky top-0 z-20 border-b border-[#1e2532] bg-[#0b0e14]/95 backdrop-blur-md px-8 py-5">
-        <h1 className="text-2xl font-extrabold text-white tracking-tight flex items-center gap-3">
-          <Users className="w-6 h-6 text-[#3b82f6]" />
-          Team Intelligence
-        </h1>
-        <p className="text-sm mt-1 text-[#8b9bb4]">
-          Developer leaderboards, AI utilization efficiency, and individual performance metrics.
-        </p>
+      <div className="sticky top-0 z-20 border-b border-[#1e2532] bg-[#0b0e14]/95 backdrop-blur-md px-8 py-5 flex items-center justify-between">
+        <div>
+          <h1 className="text-2xl font-extrabold text-white tracking-tight flex items-center gap-3">
+            <Users className="w-6 h-6 text-[#3b82f6]" />
+            Team Intelligence
+          </h1>
+          <p className="text-sm mt-1 text-[#8b9bb4]">
+            Developer leaderboards, AI utilization efficiency, and individual performance metrics.
+          </p>
+        </div>
+        <button
+          onClick={() => setShowAddModal(true)}
+          className="flex items-center gap-2 bg-[#5b5fd8] hover:bg-[#4a4fcf] text-white px-4 py-2 rounded-lg font-bold transition-all text-sm"
+        >
+          <Plus className="w-4 h-4" />
+          Add Member
+        </button>
       </div>
 
       <div className="px-8 py-6 space-y-8">
@@ -93,6 +131,7 @@ export default function TeamIntelligencePage() {
                   <th className="px-6 py-4 font-semibold text-[#8b9bb4]">AI %</th>
                   <th className="px-6 py-4 font-semibold text-[#8b9bb4]">Bugs Fixed</th>
                   <th className="px-6 py-4 font-semibold text-[#8b9bb4]">Active Hours</th>
+                  <th className="px-6 py-4 font-semibold text-[#8b9bb4]"></th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-[#1e2532]">
@@ -127,6 +166,15 @@ export default function TeamIntelligencePage() {
                     <td className="px-6 py-4">
                       <span className="font-mono font-bold text-[#3b82f6]">{member.activeCodingHours}h</span>
                     </td>
+                    <td className="px-6 py-4">
+                      <button 
+                        onClick={() => removeTeamMember(member.id)}
+                        className="p-1.5 text-[#586c8f] hover:text-red-400 hover:bg-red-400/10 rounded-md transition-colors"
+                        title="Remove member"
+                      >
+                        <Trash2 className="w-4 h-4" />
+                      </button>
+                    </td>
                   </tr>
                 ))}
               </tbody>
@@ -134,6 +182,83 @@ export default function TeamIntelligencePage() {
           </div>
         </div>
       </div>
+
+      {/* Add Member Modal */}
+      {showAddModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4">
+          <div className="bg-[#111622] border border-[#1e2532] rounded-2xl w-full max-w-md shadow-2xl overflow-hidden animate-in zoom-in-95 duration-200">
+            <div className="flex items-center justify-between px-6 py-4 border-b border-[#1e2532] bg-[#1a2130]">
+              <h2 className="text-lg font-bold text-white flex items-center gap-2">
+                <Users className="w-5 h-5 text-[#3b82f6]" /> Add Team Member
+              </h2>
+              <button onClick={() => setShowAddModal(false)} className="text-[#8b9bb4] hover:text-white transition-colors">
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+            <form onSubmit={handleAddMember} className="p-6 space-y-4">
+              <div>
+                <label className="block text-xs font-bold text-[#8b9bb4] uppercase tracking-wider mb-2">Developer Name</label>
+                <input 
+                  type="text" 
+                  value={newMember.name || ''}
+                  onChange={(e) => setNewMember({...newMember, name: e.target.value})}
+                  className="w-full bg-[#0b0e14] border border-[#1e2532] rounded-lg px-4 py-2.5 text-white text-sm focus:outline-none focus:border-[#5b5fd8] transition-colors"
+                  placeholder="e.g. Jane Doe"
+                  required
+                />
+              </div>
+              <div>
+                <label className="block text-xs font-bold text-[#8b9bb4] uppercase tracking-wider mb-2">Role / Title</label>
+                <input 
+                  type="text" 
+                  value={newMember.role || ''}
+                  onChange={(e) => setNewMember({...newMember, role: e.target.value})}
+                  className="w-full bg-[#0b0e14] border border-[#1e2532] rounded-lg px-4 py-2.5 text-white text-sm focus:outline-none focus:border-[#5b5fd8] transition-colors"
+                  placeholder="e.g. Senior Frontend Engineer"
+                  required
+                />
+              </div>
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-xs font-bold text-[#8b9bb4] uppercase tracking-wider mb-2">Productivity</label>
+                  <input 
+                    type="number" 
+                    value={newMember.productivityScore || 0}
+                    onChange={(e) => setNewMember({...newMember, productivityScore: Number(e.target.value), productivity: Number(e.target.value)})}
+                    className="w-full bg-[#0b0e14] border border-[#1e2532] rounded-lg px-4 py-2 text-white text-sm focus:outline-none focus:border-[#5b5fd8]"
+                    min="0" max="100"
+                  />
+                </div>
+                <div>
+                  <label className="block text-xs font-bold text-[#8b9bb4] uppercase tracking-wider mb-2">AI Efficiency</label>
+                  <input 
+                    type="number" 
+                    value={newMember.aiEfficiency || 0}
+                    onChange={(e) => setNewMember({...newMember, aiEfficiency: Number(e.target.value)})}
+                    className="w-full bg-[#0b0e14] border border-[#1e2532] rounded-lg px-4 py-2 text-white text-sm focus:outline-none focus:border-[#5b5fd8]"
+                    min="0" max="100"
+                  />
+                </div>
+              </div>
+              <div className="pt-4 border-t border-[#1e2532] flex justify-end gap-3">
+                <button 
+                  type="button" 
+                  onClick={() => setShowAddModal(false)}
+                  className="px-4 py-2 rounded-lg text-sm font-bold text-[#8b9bb4] hover:text-white transition-colors"
+                >
+                  Cancel
+                </button>
+                <button 
+                  type="submit"
+                  className="bg-[#5b5fd8] hover:bg-[#4a4fcf] text-white px-6 py-2 rounded-lg font-bold text-sm transition-all shadow-[0_0_15px_rgba(91,95,216,0.2)]"
+                >
+                  Add Member
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

@@ -139,6 +139,8 @@ export interface WorkAnalyticsState {
   createEscalation: (type: string, subject: string, developer: string) => Promise<void>;
   updatePrivacySetting: (key: keyof PrivacySettings, value: any) => void;
   addTimelineEntry: (entry: Omit<TimelineEntry, 'id'>) => void;
+  addTeamMember: (member: Omit<TeamMember, 'id'>) => void;
+  removeTeamMember: (id: string) => void;
 }
 
 // ─── Mock Data ───────────────────────────────────────────────────────────────
@@ -725,6 +727,22 @@ export const useWorkAnalyticsStore = create<WorkAnalyticsState>()(
         };
         set((state) => ({
           timeline: [...state.timeline, newEntry],
+        }));
+      },
+
+      addTeamMember: (member: Omit<TeamMember, 'id'>) => {
+        const newMember: TeamMember = {
+          ...member,
+          id: generateId(),
+        };
+        set((state) => ({
+          teamMembers: [newMember, ...state.teamMembers],
+        }));
+      },
+
+      removeTeamMember: (id: string) => {
+        set((state) => ({
+          teamMembers: state.teamMembers.filter(m => m.id !== id)
         }));
       },
     }),

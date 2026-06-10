@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { useOsStore } from '@/store/useOsStore';
 import { useProjectStore } from '@/store/useProjectStore';
@@ -10,140 +10,8 @@ import {
   Timer, AlertTriangle as AlertTri, MessageCircle, Flag,
   BarChart3, TrendingUp, PanelRightClose, PanelRightOpen,
   Target, Cpu, Briefcase, Eye, Lock, Bug, Calendar, DollarSign,
-  TrendingDown, CheckCircle2, Crosshair, Users, Sparkles
+  TrendingDown, CheckCircle2, Crosshair, Users, Sparkles, Loader2
 } from 'lucide-react';
-
-/* ─── Mock Data for AI CEO Dashboard ─────────────────────────── */
-
-// Base mock data for AI CEO Dashboard (will be overridden by real project data)
-const PROJECT_INFO = {
-  name: 'No Active Project',
-  type: 'AI Generation Platform',
-  healthScore: 91,
-  deliveryConfidence: 94,
-  lastReview: '2 mins ago',
-  status: 'IDLE' as const,
-};
-
-const EXECUTIVE_SUMMARY = `Project progressing normally. Frontend completion is ahead of schedule. Testing coverage requires improvement. No critical security issues detected. Estimated delivery: 3 days earlier than planned.`;
-
-const HEALTH_BREAKDOWN = [
-  { label: 'Code Quality', weight: '20%', value: 94, color: '#10b981' },
-  { label: 'Task Completion', weight: '20%', value: 88, color: '#10b981' },
-  { label: 'Test Coverage', weight: '15%', value: 62, color: '#f59e0b' },
-  { label: 'Security', weight: '15%', value: 96, color: '#3b82f6' },
-  { label: 'Performance', weight: '10%', value: 90, color: '#10b981' },
-  { label: 'Documentation', weight: '10%', value: 78, color: '#a855f7' },
-  { label: 'Team Productivity', weight: '10%', value: 85, color: '#10b981' },
-];
-
-const DELIVERY_PREDICTION = {
-  currentProgress: 68,
-  expectedCompletion: 'June 15',
-  onTimeProb: 94,
-  delayProb: 6,
-};
-
-const RISK_CENTER = {
-  critical: 0,
-  medium: 2,
-  low: 5,
-  technical: ['Large components in layout module', 'Duplicate code in API routes'],
-  business: ['Missing edge case workflows in MCQ'],
-  team: ['Slow progress on Testing AI', 'Unassigned QA tasks'],
-};
-
-const CTO_ADVICE = [
-  { id: 1, text: 'Split Dashboard.tsx', impact: 'High', effort: 'Low', priority: 'High' },
-  { id: 2, text: 'Add API validation layer', impact: 'High', effort: 'Medium', priority: 'High' },
-  { id: 3, text: 'Increase testing coverage', impact: 'Medium', effort: 'High', priority: 'Medium' },
-  { id: 4, text: 'Optimize database queries', impact: 'Medium', effort: 'Low', priority: 'Low' },
-];
-
-const QUALITY_CENTER = [
-  { label: 'Code Quality', grade: 'A', color: '#10b981' },
-  { label: 'Maintainability', grade: 'A-', color: '#10b981' },
-  { label: 'Scalability', grade: 'B+', color: '#3b82f6' },
-  { label: 'Documentation', grade: 'B', color: '#f59e0b' },
-  { label: 'Security', grade: 'A+', color: '#8b5cf6' },
-  { label: 'Accessibility', grade: 'C+', color: '#ef4444' },
-  { label: 'Performance', grade: 'A', color: '#10b981' },
-];
-
-const PRODUCT_MANAGER_VIEW = {
-  completed: 42,
-  pending: 15,
-  blocked: 2,
-  unused: 1,
-  clientNext: 'Custom Reporting Module',
-  notNeeded: 'Legacy Auth Support',
-};
-
-const CLIENT_PERSPECTIVE = {
-  satisfaction: 8.7,
-  concerns: [
-    'Reporting module incomplete',
-    'Mobile responsiveness pending',
-  ]
-};
-
-const ARCHITECT_REVIEW = {
-  score: 92,
-  folderStructure: 'Clean',
-  dbDesign: 'Optimal',
-  apiDesign: 'Scalable',
-  reusability: 'High',
-  componentArch: 'Needs refactoring in Dashboard',
-};
-
-const QA_REVIEW = {
-  bugRisk: 'Low',
-  untestedModules: 2,
-  highRiskAreas: ['Checkout Flow', 'AI Router'],
-  regressionRisk: 'Minimal',
-};
-
-const SECURITY_REVIEW = {
-  score: 96,
-  checks: [
-    { label: 'Authentication', pass: true },
-    { label: 'Authorization', pass: true },
-    { label: 'Secrets Exposure', pass: true },
-    { label: 'SQL Injection', pass: true },
-    { label: 'XSS / CSRF', pass: true },
-    { label: 'Rate Limiting', pass: false },
-  ]
-};
-
-const RESOURCE_UTIL = {
-  tokens: '1.2M',
-  cost: '$24.50',
-  buildTime: '45s',
-  deployTime: '2m 10s',
-  suggestion: 'Cache repeated AI prompts to reduce token usage by ~15%.'
-};
-
-const TEAM_PRODUCTIVITY = {
-  efficiency: 88,
-  tasksToday: 14,
-  linesChanged: '+1,240 / -320',
-  commits: 8,
-  reviews: 4,
-  bugFixes: 2,
-};
-
-const FUTURE_PREDICTION = [
-  'Dashboard performance degradation as data grows.',
-  'API scaling bottleneck during peak swarm execution.',
-  'Testing backlog if not addressed this week.',
-];
-
-const CEO_STRATEGIC_ADVICE = [
-  'Freeze new feature requests.',
-  'Complete testing before UI refinements.',
-  'Prioritize deployment readiness.',
-  'Reduce technical debt in reporting module.',
-];
 
 /* ─── Helpers ────────────────────────────────────────────────── */
 
@@ -248,7 +116,7 @@ function CollapsibleSection({ title, icon, badge, accent, defaultOpen = false, c
         />
       </button>
       <div style={{
-        maxHeight: open ? 1200 : 0, opacity: open ? 1 : 0, overflow: 'hidden',
+        maxHeight: open ? 2500 : 0, opacity: open ? 1 : 0, overflow: 'hidden',
         transition: 'max-height 0.35s ease, opacity 0.25s ease', padding: open ? '0 10px 10px' : '0 10px',
       }}>
         {children}
@@ -275,18 +143,42 @@ export default function RightPane() {
   const activeProject = getActiveProject();
   
   const [collapsed, setCollapsed] = useState(false);
-  const [thinkingMode, setThinkingMode] = useState('DeepSeek Pro');
+  const [thinkingMode, setThinkingMode] = useState('deepseek-v4-pro');
 
-  // Dynamically override project info based on actual project selection
+  const [liveData, setLiveData] = useState<any>(null);
+  const [loading, setLoading] = useState(false);
+
+  useEffect(() => {
+    async function fetchLiveTelemetry() {
+      if (!activeProject?.id) return;
+      setLoading(true);
+      try {
+        const res = await fetch(`/api/projects/${activeProject.id}/ceo-dashboard`);
+        const result = await res.json();
+        if (result.success) {
+          setLiveData(result.data);
+        }
+      } catch (e) {
+        console.error("Failed to fetch live telemetry:", e);
+      } finally {
+        setLoading(false);
+      }
+    }
+    fetchLiveTelemetry();
+  }, [activeProject?.id]);
+
   const currentProjectInfo = {
-    ...PROJECT_INFO,
-    name: activeProject?.name || PROJECT_INFO.name,
-    type: activeProject?.domainTemplate ? `${activeProject.domainTemplate} Project` : PROJECT_INFO.type,
-    status: (activeProject?.status?.toUpperCase() || PROJECT_INFO.status) as any,
-    healthScore: activeProject?.progress ? Math.max(50, activeProject.progress) : PROJECT_INFO.healthScore,
+    name: activeProject?.name || 'No Active Project',
+    type: activeProject?.domainTemplate ? `${activeProject.domainTemplate} Project` : 'AI Generation Platform',
+    status: (activeProject?.status?.toUpperCase() || 'IDLE') as any,
+    healthScore: liveData?.hardMetrics?.healthScore || (activeProject?.progress ? Math.max(50, activeProject.progress) : 0),
   };
 
   const sts = STATUS_STYLES[currentProjectInfo.status] || STATUS_STYLES['IDLE'];
+  
+  // Safe Fallbacks
+  const hm = liveData?.hardMetrics || {};
+  const ins = liveData?.insights || {};
 
   /* ── Collapsed view ──────────────────────────────────────── */
   if (collapsed) {
@@ -317,7 +209,7 @@ export default function RightPane() {
           }}>
             <span style={{ fontSize: 9, fontWeight: 800, fontFamily: 'monospace', color: '#10b981' }}>{currentProjectInfo.healthScore}</span>
           </div>
-          <div title="Critical Risks: 0" style={{
+          <div title={`Critical Risks: ${hm.criticalRisks || 0}`} style={{
             width: 28, height: 28, borderRadius: 8, display: 'flex', alignItems: 'center', justifyContent: 'center',
             backgroundColor: 'rgba(245,158,11,0.1)', border: '1px solid rgba(245,158,11,0.2)',
           }}>
@@ -381,21 +273,29 @@ export default function RightPane() {
           </div>
           <div style={{ flex: 1, padding: 8, borderRadius: 8, background: 'rgba(59,130,246,0.1)', border: '1px solid rgba(59,130,246,0.2)' }}>
             <div style={{ fontSize: 10, color: '#3b82f6', fontWeight: 700, textTransform: 'uppercase', marginBottom: 2 }}>Confidence</div>
-            <div style={{ fontSize: 18, fontWeight: 800, color: '#fff' }}>{currentProjectInfo.deliveryConfidence}%</div>
+            <div style={{ fontSize: 18, fontWeight: 800, color: '#fff' }}>{loading ? '--' : '94%'}</div>
           </div>
           <div style={{ flex: 1, padding: 8, borderRadius: 8, background: 'rgba(245,158,11,0.1)', border: '1px solid rgba(245,158,11,0.2)' }}>
             <div style={{ fontSize: 10, color: '#f59e0b', fontWeight: 700, textTransform: 'uppercase', marginBottom: 2 }}>Risk Level</div>
-            <div style={{ fontSize: 18, fontWeight: 800, color: '#fff' }}>Low</div>
+            <div style={{ fontSize: 18, fontWeight: 800, color: '#fff' }}>{hm.criticalRisks > 0 ? 'High' : (hm.mediumRisks > 0 ? 'Medium' : 'Low')}</div>
           </div>
-        </div>
-        <div style={{ fontSize: 9, color: '#586c8f', marginTop: 10, textAlign: 'right' }}>
-          Last AI Review: {currentProjectInfo.lastReview}
         </div>
       </div>
 
       {/* ── Scrollable body ──────────────────────────────────── */}
       <div className="rp-scrollbar" style={{ flex: 1, overflowY: 'auto', padding: '10px', display: 'flex', flexDirection: 'column', gap: 8 }}>
         
+        {loading ? (
+          <div style={{ padding: 40, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: 12, opacity: 0.7 }}>
+             <Loader2 size={24} color="#3b82f6" className="animate-spin" />
+             <div style={{ fontSize: 11, color: '#8b9bb4' }}>DeepSeek V4 Pro Analyzing Telemetry...</div>
+          </div>
+        ) : !activeProject ? (
+          <div style={{ padding: 40, textAlign: 'center', color: '#586c8f', fontSize: 12 }}>
+            Select a project to view AI Intelligence
+          </div>
+        ) : (
+          <>
         {/* ENTERPRISE MODE: DEEPSEEK REASONING LAYER */}
         {osMode === 'ENTERPRISE' && (
           <div style={{ marginBottom: 4 }}>
@@ -408,11 +308,8 @@ export default function RightPane() {
                   borderRadius: 6, padding: '4px 8px', fontSize: 10, fontWeight: 700, outline: 'none'
                 }}
               >
-                <option value="DeepSeek Pro">🧠 DeepSeek Pro</option>
-                <option value="CTO Mode">👔 CTO Mode</option>
+                <option value="deepseek-v4-pro">🧠 DeepSeek V4 Pro</option>
                 <option value="Architect Mode">🏗️ Architect Mode</option>
-                <option value="Cost Optimizer">💰 Cost Optimizer</option>
-                <option value="Fast Mode">⚡ Fast Mode</option>
               </select>
             </div>
             <div style={{ padding: 10, borderRadius: 8, background: 'linear-gradient(135deg, rgba(59,130,246,0.1), transparent)', border: '1px solid rgba(59,130,246,0.2)' }}>
@@ -422,11 +319,11 @@ export default function RightPane() {
               </div>
               <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 10 }}>
                 <span style={{ color: '#8b9bb4' }}>Reasoning Depth</span>
-                <span style={{ color: '#fff', fontWeight: 700 }}>Advanced (94%)</span>
+                <span style={{ color: '#fff', fontWeight: 700 }}>Advanced (DeepSeek)</span>
               </div>
               <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 10, marginTop: 4 }}>
-                <span style={{ color: '#8b9bb4' }}>Optimization Potential</span>
-                <span style={{ color: '#f59e0b', fontWeight: 700 }}>High</span>
+                <span style={{ color: '#8b9bb4' }}>Data Source</span>
+                <span style={{ color: '#f59e0b', fontWeight: 700 }}>Live Telemetry</span>
               </div>
             </div>
           </div>
@@ -436,100 +333,64 @@ export default function RightPane() {
         <div style={{ padding: 12, borderRadius: 8, background: 'linear-gradient(135deg, rgba(255,255,255,0.05), rgba(255,255,255,0.01))', border: '1px solid #2a3441' }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginBottom: 6 }}>
             <Sparkles size={12} color="#a855f7" />
-            <span style={{ fontSize: 10, fontWeight: 700, textTransform: 'uppercase', color: '#a855f7' }}>AI Executive Summary (Simulation)</span>
+            <span style={{ fontSize: 10, fontWeight: 700, textTransform: 'uppercase', color: '#a855f7' }}>AI Executive Summary</span>
           </div>
           <p style={{ fontSize: 11, color: '#c9d1d9', lineHeight: 1.5, margin: 0 }}>
-            {EXECUTIVE_SUMMARY}
+            {ins.EXECUTIVE_SUMMARY || 'Gathering insights...'}
           </p>
         </div>
 
         {/* 1. PROJECT HEALTH & PREDICTION */}
-        <CollapsibleSection title="Project Health (Simulated)" icon={<Activity size={12} />} accent="#10b981" defaultOpen={true}>
+        <CollapsibleSection title="Live Project Health" icon={<Activity size={12} />} accent="#10b981" defaultOpen={true}>
           <div style={{ display: 'flex', gap: 12, marginBottom: 12 }}>
             <CircularProgress percent={currentProjectInfo.healthScore} size={60} />
             <div style={{ flex: 1, display: 'flex', flexDirection: 'column', justifyContent: 'center' }}>
               <div style={{ fontSize: 11, color: '#8b9bb4', marginBottom: 2 }}>Overall Health Score</div>
-              <div style={{ fontSize: 10, color: '#c9d1d9' }}>Weighted index based on 7 technical and team factors.</div>
+              <div style={{ fontSize: 10, color: '#c9d1d9' }}>Weighted index based on live DB metrics.</div>
             </div>
           </div>
-          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 6, marginBottom: 12 }}>
-            {HEALTH_BREAKDOWN.map(item => (
-              <div key={item.label} style={{ background: 'rgba(255,255,255,0.02)', padding: '4px 8px', borderRadius: 6, border: '1px solid #1e2532' }}>
-                <div style={{ fontSize: 9, color: '#8b9bb4', display: 'flex', justifyContent: 'space-between' }}>
-                  <span>{item.label}</span>
-                  <span style={{ opacity: 0.5 }}>{item.weight}</span>
-                </div>
-                <div style={{ fontSize: 11, fontWeight: 700, color: item.color }}>{item.value}/100</div>
-              </div>
-            ))}
-          </div>
+          
           <div style={{ background: '#0f172a', padding: 10, borderRadius: 8, border: '1px solid #1e293b' }}>
             <h4 style={{ fontSize: 10, textTransform: 'uppercase', color: '#94a3b8', margin: '0 0 8px 0' }}>AI Delivery Prediction</h4>
-            <MetricBar label="Current Progress" value={activeProject?.progress || DELIVERY_PREDICTION.currentProgress} color="#3b82f6" />
-            <StatRow label="Predicted Delivery" value={DELIVERY_PREDICTION.expectedCompletion} color="#f59e0b" />
-            <StatRow label="On Time Probability" value={`${DELIVERY_PREDICTION.onTimeProb}%`} color="#10b981" />
-            <StatRow label="Risk of Delay" value={`${DELIVERY_PREDICTION.delayProb}%`} color="#ef4444" />
+            <MetricBar label="Current Progress" value={activeProject?.progress || 0} color="#3b82f6" />
+            <StatRow label="Predicted Delivery" value={ins.DELIVERY_PREDICTION?.expectedCompletion || 'TBD'} color="#f59e0b" />
+            <StatRow label="On Time Probability" value={`${ins.DELIVERY_PREDICTION?.onTimeProb || 0}%`} color="#10b981" />
+            <StatRow label="Risk of Delay" value={`${ins.DELIVERY_PREDICTION?.delayProb || 0}%`} color="#ef4444" />
           </div>
         </CollapsibleSection>
 
-        {/* STARTUP MODE: Hide the heavy enterprise panels below this point to keep it simple */}
+        {/* ENTERPRISE PANELS */}
         {osMode === 'ENTERPRISE' && (
           <>
-            <div style={{ fontSize: 9, textAlign: 'center', color: '#8b9bb4', marginTop: 4, marginBottom: -4 }}>
-              --- SIMULATED DATA BELOW ---
-            </div>
             {/* 2. AI RISK DETECTION CENTER */}
             <CollapsibleSection title="Risk Detection Center" icon={<AlertTri size={12} />} accent="#ef4444" defaultOpen={false}>
           <div style={{ display: 'flex', gap: 6, marginBottom: 10 }}>
             <div style={{ flex: 1, background: 'rgba(239,68,68,0.1)', padding: 6, borderRadius: 6, border: '1px solid rgba(239,68,68,0.2)', textAlign: 'center' }}>
-              <div style={{ fontSize: 14, fontWeight: 800, color: '#ef4444' }}>{RISK_CENTER.critical}</div>
+              <div style={{ fontSize: 14, fontWeight: 800, color: '#ef4444' }}>{hm.criticalRisks || 0}</div>
               <div style={{ fontSize: 9, color: '#ef4444', textTransform: 'uppercase' }}>Critical</div>
             </div>
             <div style={{ flex: 1, background: 'rgba(245,158,11,0.1)', padding: 6, borderRadius: 6, border: '1px solid rgba(245,158,11,0.2)', textAlign: 'center' }}>
-              <div style={{ fontSize: 14, fontWeight: 800, color: '#f59e0b' }}>{RISK_CENTER.medium}</div>
+              <div style={{ fontSize: 14, fontWeight: 800, color: '#f59e0b' }}>{hm.mediumRisks || 0}</div>
               <div style={{ fontSize: 9, color: '#f59e0b', textTransform: 'uppercase' }}>Medium</div>
             </div>
             <div style={{ flex: 1, background: 'rgba(16,185,129,0.1)', padding: 6, borderRadius: 6, border: '1px solid rgba(16,185,129,0.2)', textAlign: 'center' }}>
-              <div style={{ fontSize: 14, fontWeight: 800, color: '#10b981' }}>{RISK_CENTER.low}</div>
+              <div style={{ fontSize: 14, fontWeight: 800, color: '#10b981' }}>{hm.lowRisks || 0}</div>
               <div style={{ fontSize: 9, color: '#10b981', textTransform: 'uppercase' }}>Low</div>
             </div>
           </div>
           
-          <div style={{ fontSize: 10, color: '#c9d1d9', marginBottom: 4, fontWeight: 700 }}>Technical Risks</div>
+          <div style={{ fontSize: 10, color: '#c9d1d9', marginBottom: 4, fontWeight: 700 }}>Technical Risks (Live)</div>
           <ul style={{ margin: '0 0 8px 0', paddingLeft: 16, fontSize: 11, color: '#8b9bb4' }}>
-            {RISK_CENTER.technical.map((r, i) => <li key={i}>{r}</li>)}
-          </ul>
-          
-          <div style={{ fontSize: 10, color: '#c9d1d9', marginBottom: 4, fontWeight: 700 }}>Business Risks</div>
-          <ul style={{ margin: '0 0 8px 0', paddingLeft: 16, fontSize: 11, color: '#8b9bb4' }}>
-            {RISK_CENTER.business.map((r, i) => <li key={i}>{r}</li>)}
-          </ul>
-          
-          <div style={{ fontSize: 10, color: '#c9d1d9', marginBottom: 4, fontWeight: 700 }}>Team Risks</div>
-          <ul style={{ margin: '0 0 4px 0', paddingLeft: 16, fontSize: 11, color: '#8b9bb4' }}>
-            {RISK_CENTER.team.map((r, i) => <li key={i}>{r}</li>)}
+            <li>Untested Modules: {hm.untestedModules || 0}</li>
+            {ins.FUTURE_PREDICTION?.map((r: string, i: number) => <li key={i}>{r}</li>)}
           </ul>
         </CollapsibleSection>
 
         {/* 3. CTO & ARCHITECT REVIEW */}
         <CollapsibleSection title="CTO & Architect Review" icon={<Cpu size={12} />} accent="#8b5cf6">
-          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 8, padding: 8, background: 'rgba(139,92,246,0.1)', borderRadius: 6, border: '1px solid rgba(139,92,246,0.2)' }}>
-            <span style={{ fontSize: 11, fontWeight: 700, color: '#c4b5fd' }}>Architecture Score</span>
-            <span style={{ fontSize: 16, fontWeight: 800, color: '#8b5cf6', fontFamily: 'monospace' }}>{ARCHITECT_REVIEW.score}%</span>
-          </div>
-          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 4, marginBottom: 12 }}>
-            <StatRow label="Folder Struct" value={ARCHITECT_REVIEW.folderStructure} color="#10b981" />
-            <StatRow label="DB Design" value={ARCHITECT_REVIEW.dbDesign} color="#10b981" />
-            <StatRow label="API Design" value={ARCHITECT_REVIEW.apiDesign} color="#10b981" />
-            <StatRow label="Reusability" value={ARCHITECT_REVIEW.reusability} color="#10b981" />
-            <div style={{ gridColumn: '1 / -1' }}>
-              <StatRow label="Component Arch" value={ARCHITECT_REVIEW.componentArch} color="#f59e0b" />
-            </div>
-          </div>
-          
           <div style={{ fontSize: 10, fontWeight: 700, color: '#c9d1d9', marginBottom: 6, textTransform: 'uppercase' }}>Immediate Actions</div>
           <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
-            {CTO_ADVICE.map((item, idx) => (
+            {ins.CTO_ADVICE?.map((item: any, idx: number) => (
               <div key={idx} style={{ padding: 8, background: 'rgba(255,255,255,0.03)', borderRadius: 6, border: '1px solid #1e2532' }}>
                 <div style={{ fontSize: 11, color: '#e2e8f0', marginBottom: 6 }}>{idx+1}. {item.text}</div>
                 <div style={{ display: 'flex', gap: 4 }}>
@@ -542,109 +403,32 @@ export default function RightPane() {
         </CollapsibleSection>
 
         {/* 4. PRODUCT MANAGER & CLIENT VIEW */}
-        <CollapsibleSection title="Product & Client View" icon={<Briefcase size={12} />} accent="#06b6d4">
-          <div style={{ display: 'flex', gap: 10, marginBottom: 12 }}>
-            <div style={{ flex: 1, padding: 8, borderRadius: 6, background: '#0f172a', border: '1px solid #1e293b' }}>
-              <div style={{ fontSize: 10, color: '#94a3b8', marginBottom: 4 }}>Client Satisfaction</div>
-              <div style={{ fontSize: 20, fontWeight: 800, color: '#22d3ee' }}>{CLIENT_PERSPECTIVE.satisfaction} <span style={{fontSize: 12, color: '#64748b'}}>/ 10</span></div>
-            </div>
-          </div>
-          <div style={{ fontSize: 10, color: '#c9d1d9', marginBottom: 4, fontWeight: 700 }}>Potential Client Concerns:</div>
-          <ul style={{ margin: '0 0 12px 0', paddingLeft: 16, fontSize: 11, color: '#8b9bb4' }}>
-            {CLIENT_PERSPECTIVE.concerns.map((c, i) => <li key={i}>{c}</li>)}
-          </ul>
-          
-          <div style={{ fontSize: 10, color: '#c9d1d9', marginBottom: 6, fontWeight: 700 }}>Feature Status</div>
+        <CollapsibleSection title="Product Manager View" icon={<Briefcase size={12} />} accent="#06b6d4">
+          <div style={{ fontSize: 10, color: '#c9d1d9', marginBottom: 6, fontWeight: 700 }}>Feature Task Status</div>
           <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 4, marginBottom: 10 }}>
-            <StatRow label="Completed" value={PRODUCT_MANAGER_VIEW.completed} color="#10b981" />
-            <StatRow label="Pending" value={PRODUCT_MANAGER_VIEW.pending} color="#f59e0b" />
-            <StatRow label="Blocked" value={PRODUCT_MANAGER_VIEW.blocked} color="#ef4444" />
-            <StatRow label="Unused" value={PRODUCT_MANAGER_VIEW.unused} color="#64748b" />
-          </div>
-          <div style={{ padding: 8, background: 'rgba(255,255,255,0.02)', borderRadius: 6, border: '1px solid #1e2532' }}>
-            <div style={{ fontSize: 10, color: '#8b9bb4', marginBottom: 2 }}>Likely requested next:</div>
-            <div style={{ fontSize: 11, color: '#c9d1d9', marginBottom: 6 }}>{PRODUCT_MANAGER_VIEW.clientNext}</div>
-            <div style={{ fontSize: 10, color: '#8b9bb4', marginBottom: 2 }}>Likely not needed:</div>
-            <div style={{ fontSize: 11, color: '#c9d1d9' }}>{PRODUCT_MANAGER_VIEW.notNeeded}</div>
-          </div>
-        </CollapsibleSection>
-
-        {/* 5. QA & SECURITY REVIEW */}
-        <CollapsibleSection title="QA & Security Center" icon={<ShieldCheck size={12} />} accent="#3b82f6">
-          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 12 }}>
-            <div style={{ display: 'flex', flexDirection: 'column' }}>
-              <span style={{ fontSize: 10, color: '#8b9bb4' }}>Security Score</span>
-              <span style={{ fontSize: 20, fontWeight: 800, color: '#3b82f6' }}>{SECURITY_REVIEW.score}%</span>
-            </div>
-            <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end' }}>
-              <span style={{ fontSize: 10, color: '#8b9bb4' }}>Bug Risk</span>
-              <span style={{ fontSize: 14, fontWeight: 800, color: '#10b981' }}>{QA_REVIEW.bugRisk}</span>
-            </div>
-          </div>
-
-          <div style={{ fontSize: 10, fontWeight: 700, color: '#c9d1d9', marginBottom: 6 }}>Quality Grades</div>
-          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 4, marginBottom: 12 }}>
-            {QUALITY_CENTER.map((q, i) => (
-              <StatRow key={i} label={q.label} value={q.grade} color={q.color} />
-            ))}
-          </div>
-
-          <div style={{ fontSize: 10, fontWeight: 700, color: '#c9d1d9', marginBottom: 6 }}>Security Checks</div>
-          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 4, marginBottom: 12 }}>
-            {SECURITY_REVIEW.checks.map((chk, i) => (
-              <div key={i} style={{ display: 'flex', alignItems: 'center', gap: 4, fontSize: 10, color: '#8b9bb4' }}>
-                {chk.pass ? <CheckCircle2 size={10} color="#10b981" /> : <Bug size={10} color="#ef4444" />}
-                {chk.label}
-              </div>
-            ))}
-          </div>
-
-          <div style={{ padding: 8, background: '#1e1111', borderRadius: 6, border: '1px solid #450a0a' }}>
-            <div style={{ fontSize: 10, color: '#fca5a5', marginBottom: 4 }}>Critical Untested Modules: <strong>{QA_REVIEW.untestedModules}</strong></div>
-            <div style={{ fontSize: 10, color: '#fca5a5' }}>High Risk: {QA_REVIEW.highRiskAreas.join(', ')}</div>
+            <StatRow label="Completed" value={hm.tasksCompleted || 0} color="#10b981" />
+            <StatRow label="Pending" value={hm.tasksPending || 0} color="#f59e0b" />
           </div>
         </CollapsibleSection>
 
         {/* 6. TEAM PRODUCTIVITY & RESOURCES */}
-        <CollapsibleSection title="Team & Resources" icon={<Users size={12} />} accent="#10b981">
-          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 12, padding: 8, background: 'rgba(16,185,129,0.1)', borderRadius: 6, border: '1px solid rgba(16,185,129,0.2)' }}>
-            <span style={{ fontSize: 11, fontWeight: 700, color: '#6ee7b7' }}>Team Efficiency</span>
-            <span style={{ fontSize: 16, fontWeight: 800, color: '#10b981', fontFamily: 'monospace' }}>{TEAM_PRODUCTIVITY.efficiency}%</span>
-          </div>
-          
-          <div style={{ fontSize: 10, fontWeight: 700, color: '#c9d1d9', marginBottom: 6 }}>Current Work (Today)</div>
+        <CollapsibleSection title="Team Productivity" icon={<Users size={12} />} accent="#10b981">
+          <div style={{ fontSize: 10, fontWeight: 700, color: '#c9d1d9', marginBottom: 6 }}>Current Work (Last 24h)</div>
           <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 4, marginBottom: 12 }}>
-            <StatRow label="Tasks Completed" value={TEAM_PRODUCTIVITY.tasksToday} color="#fff" />
-            <StatRow label="Lines Changed" value={TEAM_PRODUCTIVITY.linesChanged} color="#f59e0b" />
-            <StatRow label="Commits" value={TEAM_PRODUCTIVITY.commits} color="#3b82f6" />
-            <StatRow label="Reviews/Bug Fixes" value={`${TEAM_PRODUCTIVITY.reviews} / ${TEAM_PRODUCTIVITY.bugFixes}`} color="#10b981" />
-          </div>
-
-          <div style={{ fontSize: 10, fontWeight: 700, color: '#c9d1d9', marginBottom: 6 }}>AI Utilization</div>
-          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 4, marginBottom: 8 }}>
-            <StatRow label="Tokens Consumed" value={RESOURCE_UTIL.tokens} color="#a855f7" />
-            <StatRow label="Est. AI Cost" value={RESOURCE_UTIL.cost} color="#10b981" />
-            <StatRow label="Build Time" value={RESOURCE_UTIL.buildTime} />
-            <StatRow label="Deploy Time" value={RESOURCE_UTIL.deployTime} />
-          </div>
-          <div style={{ fontSize: 10, color: '#8b9bb4', padding: 6, background: 'rgba(255,255,255,0.02)', borderRadius: 6 }}>
-            💡 {RESOURCE_UTIL.suggestion}
+            <StatRow label="Tasks Completed" value={hm.tasksToday || 0} color="#fff" />
+            <StatRow label="Commits/Logs" value={hm.commits || 0} color="#3b82f6" />
+            <StatRow label="Total Activity" value={hm.recentLogsCount || 0} color="#f59e0b" />
           </div>
         </CollapsibleSection>
 
         {/* 7. STRATEGIC ADVICE & FUTURE */}
-        <CollapsibleSection title="Strategic Advice & Future" icon={<Eye size={12} />} accent="#eab308" defaultOpen={false}>
+        <CollapsibleSection title="Strategic Advice" icon={<Eye size={12} />} accent="#eab308" defaultOpen={false}>
           <div style={{ padding: 10, background: '#1a1403', borderRadius: 6, border: '1px solid #713f12', marginBottom: 10 }}>
             <div style={{ fontSize: 11, fontWeight: 700, color: '#fde047', marginBottom: 6 }}>If I were running this project today:</div>
             <ol style={{ margin: 0, paddingLeft: 16, fontSize: 11, color: '#fef08a', display: 'flex', flexDirection: 'column', gap: 4 }}>
-              {CEO_STRATEGIC_ADVICE.map((adv, i) => <li key={i}>{adv}</li>)}
+              {ins.CEO_STRATEGIC_ADVICE?.map((adv: string, i: number) => <li key={i}>{adv}</li>)}
             </ol>
           </div>
-          
-          <div style={{ fontSize: 10, fontWeight: 700, color: '#c9d1d9', marginBottom: 6 }}>Possible Future Risks</div>
-          <ul style={{ margin: 0, paddingLeft: 16, fontSize: 11, color: '#8b9bb4', display: 'flex', flexDirection: 'column', gap: 2 }}>
-            {FUTURE_PREDICTION.map((fp, i) => <li key={i}>{fp}</li>)}
-          </ul>
         </CollapsibleSection>
 
         {/* ENTERPRISE MODE: ESCALATION COMMAND CENTER */}
@@ -668,6 +452,8 @@ export default function RightPane() {
           </div>
         </div>
 
+        </>
+        )}
         </>
         )}
       </div>

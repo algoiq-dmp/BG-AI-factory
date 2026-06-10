@@ -11,6 +11,7 @@ import { usePathname } from 'next/navigation';
 import { useState } from 'react';
 import { useSession, signOut } from 'next-auth/react';
 import { useOsStore } from '@/store/useOsStore';
+import { useProjectStore } from '@/store/useProjectStore';
 import {
   Award, Eye, Users, Target, Box,
   ChevronRight, ChevronDown,
@@ -67,11 +68,16 @@ const sections: NavSection[] = [
     title: 'ARCHITECTURE', icon: Layers, color: '#10b981', defaultOpen: false,
     items: [
       { name: 'Solution Architect', href: '/architecture', icon: Layers },
-      { name: 'API Blueprint', href: '/backend-ai', icon: Database },
+      { name: 'Master Document', href: '/master-document', icon: FileText },
+      { name: 'Auto Research', href: '/auto-research', icon: Search },
+      { name: 'Estimation', href: '/estimation', icon: Calculator },
+      { name: 'Sprint Planner', href: '/sprint-planner', icon: LayoutPanelLeft },
+      { name: 'Client Proposal', href: '/client-proposal', icon: FileEdit },
+      { name: 'Dependency Graph', href: '/dependency-graph', icon: GitBranch },
+      { name: 'API Blueprint', href: '/backend-ai', icon: Globe },
       { name: 'Database Designer', href: '/database-ai', icon: Database },
-      { name: 'Frontend AI', href: '/frontend-ai', icon: Monitor },
-      { name: 'Project Hub', href: '/hub', icon: LayoutPanelLeft },
-      { name: 'Execution Studio', href: '/execution-studio', icon: Terminal },
+      { name: 'Wireframe Planner', href: '/wireframe-planner', icon: LayoutPanelLeft },
+      { name: 'UI Preview', href: '/ui-preview', icon: Monitor },
     ],
   },
   {
@@ -94,8 +100,19 @@ const sections: NavSection[] = [
     title: 'PROMPTS', icon: Wand2, color: '#3b82f6', defaultOpen: false,
     items: [
       { name: 'Prompt Compiler', href: '/prompt-compiler', icon: Layers },
-      { name: 'Phase Prompts', href: '/phase-prompts', icon: FileEdit },
       { name: 'Prompt Workshop', href: '/prompts', icon: Wand2 },
+    ],
+  },
+  {
+    title: 'PIPELINE', icon: GitCommit, color: '#0ea5e9', defaultOpen: false,
+    items: [
+      { name: 'Audit Center', href: '/audit-center', icon: ShieldCheck },
+      { name: 'Testing Intelligence', href: '/testing-intelligence', icon: FlaskConical },
+      { name: 'Deploy Checklist', href: '/deploy-checklist', icon: Rocket },
+      { name: 'Meeting Intelligence', href: '/meeting-intelligence', icon: Mic },
+      { name: 'SOP Generator', href: '/sop-generator', icon: FileText },
+      { name: 'Changelog', href: '/changelog', icon: History },
+      { name: 'Time Machine', href: '/time-machine', icon: Clock },
     ],
   },
   {
@@ -162,6 +179,7 @@ export default function Sidebar() {
   const { data: session } = useSession();
   const pathname = usePathname();
   const { mode } = useOsStore();
+  const { activeProjectId } = useProjectStore();
   const [collapsed, setCollapsed] = useState(false);
   const [openSections, setOpenSections] = useState<Record<string, boolean>>(
     Object.fromEntries(sections.map(s => [s.title, s.defaultOpen]))
@@ -173,17 +191,33 @@ export default function Sidebar() {
 
   const isActive = (href: string) => pathname === href || (pathname.startsWith(href) && href !== '/');
 
+  const getHref = (href: string) => {
+    const projectRoutes = [
+      '/auto-research', '/estimation', '/sprint-planner', '/client-proposal',
+      '/dependency-graph', '/wireframe-planner', '/ui-preview', '/audit-center',
+      '/testing-intelligence', '/deploy-checklist', '/meeting-intelligence',
+      '/sop-generator', '/changelog', '/time-machine'
+    ];
+    if (href === '/test-project/agent-swarm') return activeProjectId ? `/${activeProjectId}/agent-swarm` : href;
+    if (href === '/test-project/settings') return activeProjectId ? `/${activeProjectId}/settings` : href;
+    if (projectRoutes.includes(href) && activeProjectId) return `/${activeProjectId}${href}`;
+    return href;
+  };
+
   if (collapsed) {
     return (
       <div className="w-[60px] h-screen flex flex-col bg-[#0b0e14] border-r border-[#1e2532] items-center py-4">
         <button onClick={() => setCollapsed(false)} className="w-9 h-9 rounded-xl bg-gradient-to-br from-[#4a4fcf] to-[#2a2c7a] flex items-center justify-center mb-4 cursor-pointer">
           <Sparkles className="w-5 h-5 text-yellow-400" />
         </button>
-        {sections.slice(0, 4).flatMap(s => s.items.slice(0, 2)).map((item, i) => (
-          <Link key={i} href={item.href} title={item.name} className={`w-9 h-9 rounded-lg flex items-center justify-center mb-1 transition-all ${isActive(item.href) ? 'bg-[#1a1b3b] text-[#10b981]' : 'text-[#586c8f] hover:text-white hover:bg-white/5'}`}>
+        {sections.slice(0, 4).flatMap(s => s.items.slice(0, 2)).map((item, i) => {
+          const href = getHref(item.href);
+          return (
+          <Link key={i} href={href} title={item.name} className={`w-9 h-9 rounded-lg flex items-center justify-center mb-1 transition-all ${isActive(href) ? 'bg-[#1a1b3b] text-[#10b981]' : 'text-[#586c8f] hover:text-white hover:bg-white/5'}`}>
             <item.icon className="w-4 h-4" />
           </Link>
-        ))}
+          );
+        })}
         <button onClick={() => setCollapsed(false)} className="mt-auto w-9 h-9 rounded-lg flex items-center justify-center text-[#586c8f] hover:text-white transition-all cursor-pointer">
           <ChevronRight className="w-4 h-4" />
         </button>
@@ -224,23 +258,26 @@ export default function Sidebar() {
             </button>
             {openSections[section.title] && (
               <div className="pb-1">
-                {section.items.map(item => (
+                {section.items.map(item => {
+                  const href = getHref(item.href);
+                  return (
                   <Link
                     key={item.name}
-                    href={item.href}
+                    href={href}
                     className={`flex items-center gap-3 px-4 py-[7px] transition-all text-[13px] relative group ${
-                      isActive(item.href)
+                      isActive(href)
                         ? 'bg-[#1a1b3b] text-white border-l-2 border-[#10b981]'
                         : 'text-[#8b9bb4] hover:text-white hover:bg-white/[0.03] border-l-2 border-transparent'
                     }`}
                   >
-                    <item.icon className={`w-[14px] h-[14px] flex-shrink-0 ${isActive(item.href) ? 'text-[#10b981]' : 'text-[#586c8f] group-hover:text-white'}`} />
+                    <item.icon className={`w-[14px] h-[14px] flex-shrink-0 ${isActive(href) ? 'text-[#10b981]' : 'text-[#586c8f] group-hover:text-white'}`} />
                     <span className="font-semibold truncate">{item.name}</span>
                     {item.badge && (
                       <span className="ml-auto text-[8px] font-extrabold uppercase tracking-wider px-1.5 py-0.5 rounded bg-[#10b981]/15 text-[#10b981]">{item.badge}</span>
                     )}
                   </Link>
-                ))}
+                  );
+                })}
               </div>
             )}
           </div>

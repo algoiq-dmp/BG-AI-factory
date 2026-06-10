@@ -1,5 +1,6 @@
 'use client';
 import { useState, useEffect } from 'react';
+import { MarkdownViewer } from '@/components/ui/MarkdownViewer';
 import { Server, Sparkles, Loader2, FolderOpen, Shield, Layers, Database, Key } from 'lucide-react';
 
 const sections = [
@@ -87,7 +88,7 @@ export default function BackendAIPage() {
       </div>
       <div className="flex-1 bg-[#0b0e14] border border-[#1e2532] rounded-2xl overflow-hidden relative">
         <div className="absolute top-0 left-0 w-full h-8 bg-[#1a1b3b]/50 border-b border-[#1e2532] flex items-center px-4"><span className="text-xs font-mono text-[#586c8f]">{activeSection}.ts</span></div>
-        {output?(<textarea value={output} onChange={e=>setOutput(e.target.value)} className="w-full h-full bg-transparent text-[#e2e8f0] font-mono text-sm p-6 pt-12 resize-none focus:outline-none" spellCheck={false}/>):(<div className="absolute inset-0 flex flex-col items-center justify-center opacity-50 pointer-events-none"><Server className="w-16 h-16 text-[#586c8f] mb-4"/><p className="text-[#8b9bb4] text-lg font-bold">Select a section & click Generate</p></div>)}
+        {output?(<MarkdownViewer content={output} onChange={setOutput} className="absolute inset-0" />):(<div className="absolute inset-0 flex flex-col items-center justify-center opacity-50 pointer-events-none"><Server className="w-16 h-16 text-[#586c8f] mb-4"/><p className="text-[#8b9bb4] text-lg font-bold">Select a section & click Generate</p></div>)}
       </div>
     </div>
   );

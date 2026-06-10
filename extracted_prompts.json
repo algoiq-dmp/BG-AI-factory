@@ -1,0 +1,47 @@
+[
+  {
+    "id": "unknown",
+    "name": "unknown",
+    "prompt": ",t),{phase:null,provider:"
+  },
+  {
+    "id": "unknown",
+    "name": "Business Requirements Document (BRD)",
+    "prompt": "Generate a professional Business Requirements Document (BRD) with these sections:\n1. EXECUTIVE SUMMARY — Business context, problem statement, opportunity\n2. PROJECT SCOPE — In-scope, out-of-scope, boundaries\n3. BUSINESS OBJECTIVES — Measurable goals with KPIs\n4. STAKEHOLDERS — Who benefits, who's affected, decision makers\n5. BUSINESS REQUIREMENTS — Numbered BR-001, BR-002 etc. with priority (Must/Should/Could)\n6. SUCCESS CRITERIA — How to measure project success\n7. CONSTRAINTS & ASSUMPTIONS — Known limitations\n8. RISKS — Business risks with mitigation\n9. TIMELINE — High-level milestones\n10. BUDGET CONSIDERATIONS — Cost categories\n\nFormat as professional document with clear headers. Be specific, not generic."
+  },
+  {
+    "id": "unknown",
+    "name": "Functional Requirements Document (FRD)",
+    "prompt": "Generate a professional Functional Requirements Document (FRD) with these sections:\n1. SYSTEM OVERVIEW — What the system does at high level\n2. USER ROLES & PERMISSIONS — Each role with access levels\n3. FUNCTIONAL REQUIREMENTS — Numbered FR-001, FR-002 etc. Each with:\n   - Description, Input, Processing, Output, Validation Rules\n4. USE CASES — Top 10 use cases with actor, precondition, main flow, alternate flow\n5. DATA REQUIREMENTS — Key entities, relationships, validation rules\n6. INTERFACE REQUIREMENTS — UI screens, API endpoints, integrations\n7. BUSINESS RULES — Numbered BR-001 with conditions and actions\n8. REPORTING REQUIREMENTS — Reports, dashboards, exports needed\n9. NON-FUNCTIONAL REQUIREMENTS — Performance, security, scalability\n10. ACCEPTANCE CRITERIA — How to verify each requirement\n\nBe specific with field names, validation rules, and edge cases."
+  },
+  {
+    "id": "unknown",
+    "name": "Software Requirements Specification (SRS)",
+    "prompt": "Generate a professional Software Requirements Specification (SRS IEEE-830 format) with:\n1. INTRODUCTION — Purpose, scope, definitions, references\n2. SYSTEM DESCRIPTION — Product perspective, functions, user characteristics, constraints\n3. SPECIFIC REQUIREMENTS — \n   3.1 External Interface Requirements (UI, API, Hardware, Software)\n   3.2 Functional Requirements (grouped by module, each with ID, description, inputs, outputs)\n   3.3 Performance Requirements (response time, throughput, capacity)\n   3.4 Design Constraints (tech stack, standards, regulations)\n   3.5 Quality Attributes (reliability, availability, security, maintainability)\n4. DATA MODEL — Entities, attributes, relationships\n5. API SPECIFICATION — Endpoints, methods, request/response formats\n6. DEPLOYMENT REQUIREMENTS — Infrastructure, environments, CI/CD\n7. TESTING REQUIREMENTS — Test types, coverage expectations\n\nInclude specific technical details: field types, API payloads, database columns."
+  },
+  {
+    "id": "unknown",
+    "name": "Scope Document",
+    "prompt": "Generate a professional Project Scope Document with:\n1. PROJECT OVERVIEW — One paragraph summary\n2. IN-SCOPE — Explicit list of what IS included (features, modules, integrations)\n3. OUT-OF-SCOPE — Explicit list of what is NOT included (prevent scope creep)\n4. DELIVERABLES — What will be delivered (code, docs, deployments)\n5. MILESTONES — Key dates and deliverables per milestone\n6. DEPENDENCIES — External dependencies that could block progress\n7. ASSUMPTIONS — What we're assuming to be true\n8. CHANGE MANAGEMENT — How scope changes will be handled\n9. SIGN-OFF CRITERIA — What constitutes project completion\n\nBe specific and unambiguous. Each in-scope item should be verifiable."
+  },
+  {
+    "id": "hld",
+    "name": "HLD",
+    "prompt": "Generate a High-Level Design (HLD) document:\n1. SYSTEM ARCHITECTURE — Component diagram description (convert to Mermaid)\n2. TECHNOLOGY STACK — Justified choices\n3. COMPONENT BREAKDOWN — Each major component with responsibility\n4. DATA FLOW — How data moves through the system\n5. INTEGRATION POINTS — External APIs, third-party services\n6. DEPLOYMENT ARCHITECTURE — Environments, CDN, load balancing\n7. SECURITY ARCHITECTURE — Auth, encryption, access control\n\nInclude a Mermaid diagram using:\n\\"
+  },
+  {
+    "id": "lld",
+    "name": "LLD",
+    "prompt": "Generate a Low-Level Design (LLD) document:\n1. MODULE BREAKDOWN — Each module with files, functions, interfaces\n2. CLASS/COMPONENT DESIGN — Key components with props/state/methods\n3. FOLDER STRUCTURE — Complete project directory tree\n4. STATE MANAGEMENT — Store design, data flow\n5. API ENDPOINTS — Method, path, request/response, auth\n6. ERROR HANDLING — Strategy per layer\n7. UTILITY FUNCTIONS — Shared helpers\n\nInclude folder structure as code block. Be implementation-ready."
+  },
+  {
+    "id": "db",
+    "name": "DB Schema",
+    "prompt": "Generate a complete Database Schema:\n1. ENTITY LIST — All tables/collections with purpose\n2. TABLE DEFINITIONS — Each table with columns, types, constraints, defaults\n3. RELATIONSHIPS — Foreign keys, join tables, 1:1, 1:N, N:N\n4. INDEXES — Performance indexes with justification\n5. SEED DATA — Initial/default data needed\n6. MIGRATIONS — Creation order respecting foreign keys\n\nUse SQL CREATE TABLE format. Include a Mermaid ER diagram:\n\\"
+  },
+  {
+    "id": "api",
+    "name": "API Spec",
+    "prompt": "Generate a complete API Specification:\n1. BASE URL & VERSIONING — URL structure, version strategy\n2. AUTHENTICATION — Auth flow, token format, refresh\n3. ENDPOINTS — For each endpoint:\n   - Method + Path\n   - Description\n   - Request headers, params, body (with types)\n   - Response format with example JSON\n   - Error codes\n4. RATE LIMITING — Limits per tier\n5. WEBHOOKS — Event types, payload format\n6. ERROR FORMAT — Standard error response structure\n\nGroup by resource/module. Include example curl commands."
+  }
+]

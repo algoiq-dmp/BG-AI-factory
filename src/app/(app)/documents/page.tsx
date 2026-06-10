@@ -1,34 +1,31 @@
 'use client';
 
 import { useState, useEffect } from "react";
-import { FileText, Download, Eye, FileCode2, BookOpen, Loader2, BookMarked, Sparkles } from "lucide-react";
+import { FileText, Download, Eye, FileCode2, BookOpen, Loader2, BookMarked, Sparkles, X } from "lucide-react";
 import { useRouter } from "next/navigation";
+import { useProjectStore } from "@/store/useProjectStore";
+import { MarkdownViewer } from "@/components/ui/MarkdownViewer";
 
 export default function DocumentsPage() {
-  const [projectId, setProjectId] = useState<string | null>(null);
+  const { activeProjectId } = useProjectStore();
   const [project, setProject] = useState<any>(null);
   const [loading, setLoading] = useState(true);
   const [isExporting, setIsExporting] = useState(false);
+  const [selectedDoc, setSelectedDoc] = useState<any>(null);
   const router = useRouter();
 
   useEffect(() => {
-    const id = localStorage.getItem('activeProjectId');
-    setProjectId(id);
-    if (!id) {
+    if (activeProjectId) {
+      fetchDocuments();
+    } else {
       setLoading(false);
     }
-  }, []);
-
-  useEffect(() => {
-    if (projectId) {
-      fetchDocuments();
-    }
-  }, [projectId]);
+  }, [activeProjectId]);
 
   const fetchDocuments = async () => {
     try {
       setLoading(true);
-      const res = await fetch(`/api/documents?projectId=${projectId}`);
+      const res = await fetch(`/api/documents?projectId=${activeProjectId}`);
       const data = await res.json();
       if (data.success) {
         setProject(data.project);
@@ -68,7 +65,7 @@ export default function DocumentsPage() {
     );
   }
 
-  if (!projectId || !project) {
+  if (!activeProjectId || !project) {
     return (
       <div className="h-full flex flex-col items-center justify-center p-8 text-center animate-in fade-in slide-in-from-bottom-4 duration-500">
         <FileText className="w-16 h-16 text-[#586c8f] opacity-50 mb-4" />
@@ -154,7 +151,10 @@ export default function DocumentsPage() {
               </div>
 
               <div className="flex gap-2">
-                <button className="flex-1 bg-[#1a1b3b] hover:bg-[#2a2c7a] text-white text-xs font-bold py-2 rounded flex items-center justify-center gap-2 transition-colors border border-[#1e2532] hover:border-[#5b5fd8]">
+                <button 
+                  onClick={() => setSelectedDoc(doc)}
+                  className="flex-1 bg-[#1a1b3b] hover:bg-[#2a2c7a] text-white text-xs font-bold py-2 rounded flex items-center justify-center gap-2 transition-colors border border-[#1e2532] hover:border-[#5b5fd8]"
+                >
                   <Eye className="w-3.5 h-3.5" /> View
                 </button>
                 <button className="flex-1 bg-[#1a4d2e]/20 hover:bg-[#1a4d2e] text-[#51cf66] text-xs font-bold py-2 rounded flex items-center justify-center gap-2 transition-colors border border-[#51cf66]/20">
@@ -165,6 +165,31 @@ export default function DocumentsPage() {
           ))
         )}
       </div>
+
+      {/* View Document Modal */}
+      {selectedDoc && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 backdrop-blur-sm p-4 md:p-8">
+          <div className="bg-[#0b0e14] border border-[#1e2532] rounded-2xl w-full max-w-5xl h-[90vh] flex flex-col shadow-2xl overflow-hidden animate-in zoom-in-95 duration-200">
+            <div className="flex items-center justify-between px-6 py-4 border-b border-[#1e2532] bg-[#1a2130]">
+              <div className="flex items-center gap-3">
+                {getIconForType(selectedDoc.type)}
+                <div>
+                  <h2 className="text-lg font-bold text-white leading-tight">{selectedDoc.title}</h2>
+                  <div className="text-xs text-[#8b9bb4]">
+                    Generated {new Date(selectedDoc.createdAt).toLocaleDateString()}
+                  </div>
+                </div>
+              </div>
+              <button onClick={() => setSelectedDoc(null)} className="text-[#8b9bb4] hover:text-white transition-colors bg-[#0b0e14] p-1.5 rounded-md border border-[#1e2532]">
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+            <div className="flex-1 overflow-hidden relative">
+              <MarkdownViewer content={selectedDoc.content || 'No content available'} className="absolute inset-0" />
+            </div>
+          </div>
+        </div>
+      )}
 
     </div>
   );

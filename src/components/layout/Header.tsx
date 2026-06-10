@@ -15,6 +15,7 @@ import {
 } from 'lucide-react';
 import { useGitaModesStore, GITA_MODES } from '@/store/useGitaModesStore';
 import { useOsStore } from '@/store/useOsStore';
+import { useProjectStore } from '@/store/useProjectStore';
 
 /** Route-to-label mapping for breadcrumbs */
 const ROUTE_LABELS: Record<string, string> = {
@@ -58,6 +59,13 @@ export default function Header() {
 
   // OS Mode from Zustand store
   const { mode: osMode, toggleMode } = useOsStore();
+
+  // Project Store from Zustand
+  const { activeProjectId, projects, setActiveProject, fetchProjects } = useProjectStore();
+
+  useEffect(() => {
+    fetchProjects();
+  }, [fetchProjects]);
 
   // Get breadcrumb label
   const currentLabel = ROUTE_LABELS[pathname] || pathname.split('/').pop()?.replace(/-/g, ' ').replace(/\b\w/g, c => c.toUpperCase()) || 'Page';
@@ -220,13 +228,31 @@ export default function Header() {
           </div>
 
           {/* Projects */}
-          <button
-            onClick={() => router.push('/projects')}
-            className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg border border-[#1e2532] hover:border-[#5b5fd8]/30 text-[#8b9bb4] hover:text-white transition-all cursor-pointer"
-          >
-            <FolderOpen className="w-3.5 h-3.5" />
-            <span className="text-xs font-semibold hidden lg:inline">Projects</span>
-          </button>
+          <div className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg border border-[#1e2532] bg-[#111622] hover:border-[#5b5fd8]/30 transition-all">
+            <FolderOpen className="w-3.5 h-3.5 text-[#586c8f]" />
+            <select
+              value={activeProjectId || ''}
+              onChange={(e) => {
+                if (e.target.value === 'manage') {
+                  router.push('/projects');
+                } else {
+                  setActiveProject(e.target.value);
+                }
+              }}
+              className="bg-transparent text-xs font-semibold text-[#8b9bb4] hover:text-white focus:outline-none w-[120px] lg:w-[150px] truncate cursor-pointer transition-colors"
+            >
+              {projects.length === 0 && <option value="">No Projects</option>}
+              {projects.map((p) => (
+                <option key={p.id} value={p.id} className="bg-[#111622] text-white">
+                  {p.name}
+                </option>
+              ))}
+              <option disabled>──────────</option>
+              <option value="manage" className="bg-[#1e2532] text-white font-bold">
+                📁 Manage Projects
+              </option>
+            </select>
+          </div>
 
           {/* Save */}
           <button className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg border border-[#1e2532] hover:border-[#10b981]/30 text-[#8b9bb4] hover:text-[#10b981] transition-all cursor-pointer">

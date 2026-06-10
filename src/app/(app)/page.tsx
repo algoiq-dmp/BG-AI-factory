@@ -9,6 +9,7 @@
 import { useSession } from "next-auth/react";
 import Link from "next/link";
 import { useOsStore } from '@/store/useOsStore';
+import { useProjectStore } from '@/store/useProjectStore';
 import {
   Folder, Book, Rocket, FileText, Shield,
   Sparkles, Target, BrainCircuit, Search,
@@ -25,21 +26,31 @@ const DashboardGrid = dynamic(() => import('@/components/dashboard/DashboardGrid
 export default function DashboardPage() {
   const { data: session } = useSession();
   const { mode } = useOsStore();
+  const { projects, getActiveProject } = useProjectStore();
+  
+  const activeProject = getActiveProject();
   const karmaTokens = (session?.user as any)?.karmaTokens || 0;
   const karmaPercentage = Math.min(100, Math.max(0, (karmaTokens / 1000) * 100));
 
+  const totalProjects = projects.length;
+  const progress = activeProject?.progress || 0;
+  const pendingWork = progress > 0 ? 100 - progress : 0;
+  const docsCount = activeProject?._count?.documents || 0;
+  const pipelineState = activeProject?.pipelineStatus || 'PLANNING';
+  const projectStatus = activeProject?.status || 'IDLE';
+
   const stats = [
-    { label: 'AI IDE Est. Time', value: '48', unit: 'Hours', icon: Clock, color: 'text-orange-400', border: 'border-orange-500/20' },
-    { label: 'Pending Work', value: '24%', unit: '', icon: AlertCircle, color: 'text-yellow-400', border: 'border-yellow-500/20' },
-    { label: 'Projects', value: '4', unit: '', icon: Folder, color: 'text-blue-400', border: 'border-blue-500/20' },
-    { label: 'Active KB Size', value: '32K', unit: '', icon: Book, color: 'text-green-400', border: 'border-green-500/20' },
+    { label: 'AI IDE Est. Time', value: activeProject ? 'TBD' : '--', unit: '', icon: Clock, color: 'text-orange-400', border: 'border-orange-500/20' },
+    { label: 'Pending Work', value: activeProject ? `${pendingWork}%` : '--', unit: '', icon: AlertCircle, color: 'text-yellow-400', border: 'border-yellow-500/20' },
+    { label: 'Projects', value: totalProjects.toString(), unit: '', icon: Folder, color: 'text-blue-400', border: 'border-blue-500/20' },
+    { label: 'Active KB Size', value: activeProject ? docsCount.toString() : '--', unit: 'Docs', icon: Book, color: 'text-green-400', border: 'border-green-500/20' },
     ...(mode === 'ENTERPRISE' 
       ? [{ label: 'Karma Tokens', value: karmaTokens.toString(), unit: 'TKN', icon: Cpu, color: 'text-purple-400', border: 'border-purple-500/20' }]
       : [{ label: 'Usage Tier', value: 'Pro', unit: '', icon: Zap, color: 'text-yellow-400', border: 'border-yellow-500/20' }]
     ),
-    { label: 'Code Quality', value: '94%', unit: '', icon: Shield, color: 'text-blue-500', border: 'border-blue-500/20' },
-    { label: 'Swarm Health', value: 'Optimal', unit: '', icon: Activity, color: 'text-teal-400', border: 'border-teal-500/20' },
-    { label: 'Pipeline', value: '10', unit: 'Phases', icon: Rocket, color: 'text-red-400', border: 'border-red-500/20' },
+    { label: 'Code Quality', value: activeProject ? 'N/A' : '--', unit: '', icon: Shield, color: 'text-blue-500', border: 'border-blue-500/20' },
+    { label: 'Swarm Health', value: projectStatus === 'RUNNING' ? 'Active' : 'Idle', unit: '', icon: Activity, color: 'text-teal-400', border: 'border-teal-500/20' },
+    { label: 'Pipeline Status', value: pipelineState, unit: '', icon: Rocket, color: 'text-red-400', border: 'border-red-500/20' },
   ];
 
   const sections = [

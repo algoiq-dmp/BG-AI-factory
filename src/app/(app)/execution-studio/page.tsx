@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
+import { MarkdownViewer } from '@/components/ui/MarkdownViewer';
 import { useParams } from 'next/navigation';
 import { Terminal, Code2, FolderTree, Play, ShieldAlert, FileCode2, Loader2, RefreshCcw } from 'lucide-react';
 
@@ -136,21 +137,11 @@ export default function ExecutionStudio() {
               </div>
               <div>
                 <label className="text-xs text-[#8b9bb4] mb-1 block">Component Requirement</label>
-                <textarea 
-                  value={prompt}
-                  onChange={e => setPrompt(e.target.value)}
-                  placeholder="Explain exactly what this file should do..."
-                  className="w-full bg-[#1a1b3b]/50 border border-[#1e2532] rounded p-2 text-white text-sm focus:border-[#5b5fd8] focus:outline-none min-h-[80px] resize-none"
-                />
+                <MarkdownViewer content={prompt} onChange={setPrompt} className="absolute inset-0" />
               </div>
               <div>
                 <label className="text-xs text-[#8b9bb4] mb-1 block">Knowledge Context (Optional DB Schema/PRD)</label>
-                <textarea 
-                  value={context}
-                  onChange={e => setContext(e.target.value)}
-                  placeholder="Paste PRD or DB Schema here to guide the AI..."
-                  className="w-full bg-[#1a1b3b]/50 border border-[#1e2532] rounded p-2 text-white text-sm focus:border-[#5b5fd8] focus:outline-none min-h-[60px] resize-none"
-                />
+                <MarkdownViewer content={context} onChange={setContext} className="absolute inset-0" />
               </div>
 
               <button 

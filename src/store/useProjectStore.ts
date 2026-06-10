@@ -63,11 +63,7 @@ export const useProjectStore = create<ProjectState>()(
           const data = await res.json();
           if (data.success && data.projects) {
             set({ projects: data.projects });
-            // Auto-select first project if none selected
-            const state = get();
-            if (!state.activeProjectId && data.projects.length > 0) {
-              set({ activeProjectId: data.projects[0].id });
-            }
+            // Do not auto-select project. User must explicitly choose one.
           }
         } catch (error) {
           console.error('[ProjectStore] Failed to fetch projects:', error);

@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
+import { MarkdownViewer } from '@/components/ui/MarkdownViewer';
 import {
   Layers, Sparkles, Loader2, FolderOpen, Copy, Check, Download,
   Code2, Globe, Palette, Wind, Heart, Terminal, GitBranch, MessageSquare, Bot, Gem
@@ -510,7 +511,7 @@ Generate the COMPLETE, filled-in prompt ready for copy-paste into ${platform?.na
             </div>
           </div>
           {output ? (
-            <textarea value={output} onChange={e => setOutput(e.target.value)} className="w-full h-full bg-transparent text-[#e2e8f0] font-mono text-sm p-6 pt-14 resize-none focus:outline-none" spellCheck={false} />
+            <MarkdownViewer content={output} onChange={setOutput} className="absolute inset-0" />
           ) : (
             <div className="absolute inset-0 flex flex-col items-center justify-center opacity-50 pointer-events-none">
               {isGenerating ? (

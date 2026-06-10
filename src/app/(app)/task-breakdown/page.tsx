@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
+import { MarkdownViewer } from '@/components/ui/MarkdownViewer';
 import {
   ListTree,
   ChevronDown,
@@ -448,9 +449,7 @@ export default function TaskBreakdownPage() {
               Hide
             </button>
           </div>
-          <pre className="p-6 text-xs font-mono text-[#a0b0c0] max-h-[200px] overflow-y-auto whitespace-pre-wrap custom-scrollbar leading-relaxed">
-            {rawOutput}
-          </pre>
+          <div className="h-[400px] bg-[#0b0e14] border-t border-[#1e2532]"><MarkdownViewer content={rawOutput} /></div>
         </div>
       )}
     </div>

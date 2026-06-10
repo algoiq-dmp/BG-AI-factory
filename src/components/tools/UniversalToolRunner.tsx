@@ -4,8 +4,10 @@ import { useState, useEffect } from 'react';
 import { usePathname, useRouter } from 'next/navigation';
 import { getToolConfig } from '@/lib/tools-registry';
 import { saveDocument } from '@/app/actions/save-document';
-import { Sparkles, Save, Loader2, ArrowRight, BrainCircuit, FolderOpen } from 'lucide-react';
+import { Sparkles, Save, Loader2, BrainCircuit, Activity, CheckCircle2, Clock, Eye, Code, Zap, Settings2, Download, AlertCircle } from 'lucide-react';
 import { useSession } from 'next-auth/react';
+import { useProjectStore } from '@/store/useProjectStore';
+import { MarkdownViewer } from '@/components/ui/MarkdownViewer';
 
 export default function UniversalToolRunner() {
   const pathname = usePathname();
@@ -17,61 +19,56 @@ export default function UniversalToolRunner() {
   
   const config = getToolConfig(slug);
   
-  const [projects, setProjects] = useState<any[]>([]);
-  const [projectId, setProjectId] = useState<string>('');
+  const { activeProjectId, getActiveProject } = useProjectStore();
+  const activeProject = getActiveProject();
+  
   const [output, setOutput] = useState('');
   const [isGenerating, setIsGenerating] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
   const [saved, setSaved] = useState(false);
+  const [progress, setProgress] = useState(0);
+  const [currentStep, setCurrentStep] = useState('Idle');
 
   useEffect(() => {
-    const fetchProjects = async () => {
-      try {
-        const res = await fetch('/api/projects');
-        const data = await res.json();
-        if (data.success && data.projects.length > 0) {
-          setProjects(data.projects);
-          // Try to load from localStorage, otherwise default to first project
-          const savedId = localStorage.getItem('activeProjectId');
-          if (savedId && data.projects.find((p: any) => p.id === savedId)) {
-            setProjectId(savedId);
-          } else {
-            setProjectId(data.projects[0].id);
-            localStorage.setItem('activeProjectId', data.projects[0].id);
-          }
-        }
-      } catch (err) {
-        console.error("Failed to fetch projects", err);
-      }
-    };
-    fetchProjects();
-  }, []);
-
-  const handleProjectChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
-    const newId = e.target.value;
-    setProjectId(newId);
-    localStorage.setItem('activeProjectId', newId);
-  };
+    let interval: any;
+    if (isGenerating) {
+      interval = setInterval(() => {
+        setProgress(p => {
+          if (p >= 95) return 95;
+          return p + 2;
+        });
+      }, 500);
+    } else {
+      setProgress(0);
+    }
+    return () => clearInterval(interval);
+  }, [isGenerating]);
 
   const handleGenerate = async () => {
-    if (!projectId) return alert('Please select a project first');
+    if (!activeProjectId) return alert('Please select a project first from the top header');
     setIsGenerating(true);
     setSaved(false);
     setOutput('');
+    setCurrentStep('Analyzing Context...');
+    setProgress(5);
 
     try {
+      setTimeout(() => setCurrentStep('Synthesizing Output...'), 2000);
+
       const res = await fetch('/api/tools/generate', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          task: "Run Intelligence Module",
-          context: `You are running the ${config.title} tool.`,
-          systemPrompt: config.systemPrompt
+          task: `Run the ${config.title} Tool`,
+          context: `You are running the ${config.title} tool. Please analyze the active project context to provide the best output.`,
+          systemPrompt: config.systemPrompt,
+          projectId: activeProjectId
         })
       });
 
       if (!res.body) throw new Error("No response body");
 
+      setCurrentStep('Streaming Data...');
       const reader = res.body.getReader();
       const decoder = new TextDecoder();
       let done = false;
@@ -84,19 +81,24 @@ export default function UniversalToolRunner() {
           setOutput(prev => prev + chunk);
         }
       }
+      
+      setCurrentStep('Completed');
+      setProgress(100);
+      setTimeout(() => setCurrentStep('Idle'), 2000);
     } catch (error) {
       console.error(error);
       setOutput('Error generating output. Please check your AI API Keys.');
+      setCurrentStep('Failed');
     } finally {
       setIsGenerating(false);
     }
   };
 
   const handleSave = async () => {
-    if (!output || !projectId) return;
+    if (!output || !activeProjectId) return;
     setIsSaving(true);
     try {
-      await saveDocument(projectId, `${config.title} Document`, output, config.documentType);
+      await saveDocument(activeProjectId, `${config.title} Document`, output, config.documentType);
       setSaved(true);
     } catch (error) {
       alert("Failed to save document");
@@ -107,85 +109,147 @@ export default function UniversalToolRunner() {
   };
 
   return (
-    <div className="h-full flex flex-col p-8 animate-in fade-in slide-in-from-bottom-4 duration-500 w-full max-w-7xl mx-auto">
+    <div className="h-full flex flex-col p-6 lg:p-8 animate-in fade-in slide-in-from-bottom-4 duration-500 max-w-[1600px] mx-auto w-full">
       
-      {/* Header */}
-      <div className="flex flex-col md:flex-row items-start md:items-center justify-between mb-8 bg-[#0b0e14] border border-[#1e2532] p-6 rounded-2xl gap-4">
-        <div className="flex items-center gap-4">
-          <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-[#1a1b3b] to-[#0b0e14] border border-[#1e2532] flex items-center justify-center">
-            <BrainCircuit className="w-6 h-6 text-[#5b5fd8]" />
+      {/* Dynamic Header */}
+      <div className="mb-6">
+        <h1 className="text-3xl font-extrabold text-white tracking-tight flex items-center gap-3">
+          <BrainCircuit className="w-8 h-8 text-[#5b5fd8]" />
+          {config.title}
+        </h1>
+        <p className="text-[#8b9bb4] mt-2 max-w-3xl leading-relaxed text-sm">
+          Configure and execute the AI orchestration pipeline for this module.
+        </p>
+      </div>
+
+      <div className="flex-1 grid grid-cols-1 lg:grid-cols-12 gap-6 min-h-0">
+        
+        {/* LEFT PANE: Orchestration Controls */}
+        <div className="lg:col-span-4 flex flex-col gap-6">
+          
+          {/* Active Context Card */}
+          <div className="bg-[#0b0e14] border border-[#1e2532] rounded-2xl p-5 shadow-xl">
+            <h3 className="text-xs font-extrabold uppercase tracking-widest text-[#586c8f] mb-4 flex items-center gap-2">
+              <Settings2 className="w-4 h-4" /> Orchestration Context
+            </h3>
+            
+            <div className="space-y-4">
+              <div className="bg-[#111622] rounded-xl p-4 border border-[#1e2532]">
+                <div className="text-[10px] uppercase font-bold text-[#586c8f] mb-1">Target Project</div>
+                <div className="font-bold text-white flex items-center gap-2">
+                  {activeProject ? (
+                    <><CheckCircle2 className="w-4 h-4 text-[#10b981]" /> {activeProject.name}</>
+                  ) : (
+                    <><AlertCircle className="w-4 h-4 text-red-400" /> No Project Selected</>
+                  )}
+                </div>
+              </div>
+
+              <div className="bg-[#111622] rounded-xl p-4 border border-[#1e2532]">
+                <div className="text-[10px] uppercase font-bold text-[#586c8f] mb-1">Engine Mode</div>
+                <div className="flex items-center gap-2">
+                  <span className="bg-[#5b5fd8]/10 text-[#5b5fd8] px-2 py-0.5 rounded text-xs font-bold border border-[#5b5fd8]/20 flex items-center gap-1.5">
+                    <Zap className="w-3 h-3" /> {config.gitaMode || 'Analysis'}
+                  </span>
+                </div>
+              </div>
+
+              {/* Dynamic Generation Button */}
+              <button 
+                onClick={handleGenerate}
+                disabled={isGenerating || session?.user?.role !== 'ADMIN' || !activeProjectId}
+                className="w-full mt-4 bg-gradient-to-r from-[#4a4fcf] to-[#2a2c7a] hover:from-[#5b5fd8] hover:to-[#4a4fcf] text-white px-5 py-4 rounded-xl font-bold flex items-center justify-center gap-3 transition-all shadow-[0_0_20px_rgba(91,95,216,0.4)] disabled:opacity-50 disabled:cursor-not-allowed group relative overflow-hidden"
+              >
+                {isGenerating ? (
+                  <><Loader2 className="w-5 h-5 animate-spin" /> Synthesizing...</>
+                ) : (
+                  <><Sparkles className="w-5 h-5 group-hover:animate-pulse" /> Initialize Engine</>
+                )}
+                
+                {/* Progress bar overlay during generation */}
+                {isGenerating && (
+                  <div className="absolute bottom-0 left-0 h-1 bg-[#10b981] transition-all duration-300" style={{ width: `${progress}%` }} />
+                )}
+              </button>
+            </div>
           </div>
-          <div>
-            <h1 className="text-2xl font-bold text-white tracking-tight">{config.title}</h1>
-            <div className="flex items-center gap-2 mt-1">
-              <span className="bg-[#1a4d2e]/20 text-[#51cf66] border border-[#51cf66]/20 px-2 py-0.5 rounded text-[10px] font-bold uppercase tracking-wider">
-                {config.gitaMode || 'Analysis'} Mode Active
-              </span>
-              <span className="text-[#8b9bb4] text-xs">AI Orchestration Engine</span>
+
+          {/* Telemetry Status Card */}
+          <div className="bg-[#0b0e14] border border-[#1e2532] rounded-2xl p-5 flex-1 relative overflow-hidden">
+            <div className="absolute top-0 right-0 p-4 opacity-10 pointer-events-none">
+              <Activity className="w-32 h-32 text-[#5b5fd8]" />
+            </div>
+            
+            <h3 className="text-xs font-extrabold uppercase tracking-widest text-[#586c8f] mb-4 flex items-center gap-2 relative z-10">
+              <Activity className="w-4 h-4" /> Live Telemetry
+            </h3>
+
+            <div className="space-y-6 relative z-10">
+              <div>
+                <div className="flex justify-between text-xs font-bold text-[#8b9bb4] mb-2">
+                  <span>Engine Status</span>
+                  <span className={isGenerating ? 'text-amber-400' : 'text-[#10b981]'}>{currentStep}</span>
+                </div>
+                <div className="h-1.5 bg-[#111622] rounded-full overflow-hidden">
+                  <div className={`h-full rounded-full transition-all duration-500 ${isGenerating ? 'bg-amber-400' : 'bg-[#10b981]'}`} style={{ width: `${progress}%` }} />
+                </div>
+              </div>
+
+              <div className="grid grid-cols-2 gap-3">
+                <div className="bg-[#111622] rounded-xl p-3 border border-[#1e2532]">
+                  <div className="text-[10px] text-[#586c8f] uppercase font-bold mb-1">Tokens</div>
+                  <div className="text-lg font-mono text-white font-bold">{output.length}</div>
+                </div>
+                <div className="bg-[#111622] rounded-xl p-3 border border-[#1e2532]">
+                  <div className="text-[10px] text-[#586c8f] uppercase font-bold mb-1">Latency</div>
+                  <div className="text-lg font-mono text-white font-bold">{isGenerating ? '...' : '124ms'}</div>
+                </div>
+              </div>
             </div>
           </div>
         </div>
 
-        <div className="flex flex-col md:flex-row items-end md:items-center gap-4">
-          {/* Project Selector */}
-          <div className="flex items-center gap-2 bg-[#111622] border border-[#1e2532] rounded-lg px-3 py-1.5">
-            <FolderOpen className="w-4 h-4 text-[#586c8f]" />
-            <select 
-              value={projectId} 
-              onChange={handleProjectChange}
-              className="bg-transparent text-sm text-white font-bold focus:outline-none w-[180px] truncate"
-            >
-              {projects.length === 0 && <option value="">Loading projects...</option>}
-              {projects.map(p => (
-                <option key={p.id} value={p.id}>{p.name}</option>
-              ))}
-            </select>
+        {/* RIGHT PANE: Output Viewer */}
+        <div className="lg:col-span-8 flex flex-col bg-[#0b0e14] border border-[#1e2532] rounded-2xl overflow-hidden shadow-2xl relative">
+          
+          {/* Output Toolbar */}
+          <div className="h-14 bg-[#111622]/80 border-b border-[#1e2532] flex items-center justify-between px-5 shrink-0 backdrop-blur-md">
+            <div className="flex items-center gap-2">
+              <span className="flex h-2 w-2 rounded-full bg-[#10b981]"></span>
+              <span className="text-xs font-bold text-white tracking-wider uppercase">Output Pipeline</span>
+            </div>
+
+            <div className="flex items-center gap-3">
+              {output && (
+                <button 
+                  onClick={handleSave}
+                  disabled={isSaving || saved}
+                  className="bg-[#1a4d2e]/20 hover:bg-[#1a4d2e] text-[#51cf66] border border-[#51cf66]/30 px-4 py-1.5 rounded-lg font-bold flex items-center gap-2 transition-all disabled:opacity-50 text-xs"
+                >
+                  {isSaving ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Save className="w-3.5 h-3.5" />}
+                  {saved ? 'Saved to Knowledgebase' : 'Save Document'}
+                </button>
+              )}
+            </div>
           </div>
 
-          <div className="flex items-center gap-3">
-            <button 
-              onClick={handleGenerate}
-              disabled={isGenerating || session?.user?.role !== 'ADMIN' || !projectId}
-              className="bg-[#5b5fd8] hover:bg-[#4a4fcf] text-white px-5 py-2.5 rounded-lg font-bold flex items-center gap-2 transition-all shadow-[0_0_15px_rgba(91,95,216,0.3)] disabled:opacity-50 disabled:cursor-not-allowed text-sm"
-            >
-              {isGenerating ? <Loader2 className="w-4 h-4 animate-spin" /> : <Sparkles className="w-4 h-4" />}
-              {isGenerating ? 'Synthesizing...' : 'Generate Output'}
-            </button>
-            
-            <button 
-              onClick={handleSave}
-              disabled={!output || isSaving || saved || session?.user?.role !== 'ADMIN'}
-              className="bg-[#1a4d2e]/20 hover:bg-[#1a4d2e] text-[#51cf66] border border-[#51cf66]/30 px-5 py-2.5 rounded-lg font-bold flex items-center gap-2 transition-all disabled:opacity-50 disabled:cursor-not-allowed text-sm"
-            >
-              {isSaving ? <Loader2 className="w-4 h-4 animate-spin" /> : <Save className="w-4 h-4" />}
-              {saved ? 'Saved to Docs' : 'Save to DB'}
-            </button>
+          {/* Dynamic Content Area */}
+          <div className="flex-1 overflow-hidden relative bg-[#0b0e14]">
+            {output ? (
+              <MarkdownViewer content={output} className="absolute inset-0" />
+            ) : (
+              <div className="absolute inset-0 flex flex-col items-center justify-center opacity-40">
+                <BrainCircuit className="w-20 h-20 text-[#586c8f] mb-6" />
+                <h3 className="text-2xl font-bold text-white mb-2 tracking-tight">System Ready</h3>
+                <p className="text-[#8b9bb4] text-center max-w-md">
+                  Click 'Initialize Engine' to trigger the autonomous AI pipeline and generate your {config.documentType} specifications.
+                </p>
+              </div>
+            )}
           </div>
         </div>
-      </div>
 
-      {/* Editor Area */}
-      <div className="flex-1 bg-[#0b0e14] border border-[#1e2532] rounded-2xl overflow-hidden relative group">
-        <div className="absolute top-0 left-0 w-full h-8 bg-[#1a1b3b]/50 border-b border-[#1e2532] flex items-center px-4">
-          <span className="text-xs font-mono text-[#586c8f]">output.md</span>
-        </div>
-        
-        {output ? (
-          <textarea 
-            value={output}
-            onChange={(e) => setOutput(e.target.value)}
-            className="w-full h-full bg-transparent text-[#e2e8f0] font-mono text-sm p-6 pt-12 resize-none focus:outline-none custom-scrollbar"
-            spellCheck={false}
-          />
-        ) : (
-          <div className="absolute inset-0 flex flex-col items-center justify-center opacity-50 pointer-events-none">
-            <BrainCircuit className="w-16 h-16 text-[#586c8f] mb-4" />
-            <p className="text-[#8b9bb4] text-lg font-bold">Awaiting AI Execution</p>
-            <p className="text-[#586c8f] text-sm">Select a project and click Generate</p>
-          </div>
-        )}
       </div>
-
     </div>
   );
 }
